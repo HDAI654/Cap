@@ -1,0 +1,17 @@
+Django==5.0.2
+djangorestframework==3.14.0
+
+psycopg2-binary==2.9.9
+
+gunicorn==21.2.0
+
+python-dotenv==1.0.1
+
+confluent-kafka==2.3.0
+aiokafka==0.10.0
+
+drf-spectacular==0.26.5
+PyJWT==2.8.0
+
+dj-database-url==2.1.0
+whitenoise==6.11.0
