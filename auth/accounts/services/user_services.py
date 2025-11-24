@@ -4,6 +4,7 @@ from .kafka_producer import publish_user_created
 
 logger = logging.getLogger(__name__)
 
+
 def signup_user(username: str, email: str, password: str) -> User:
     """
     Business logic for signing up a new user.
@@ -14,7 +15,9 @@ def signup_user(username: str, email: str, password: str) -> User:
     3. Log success or errors.
     """
     try:
-        user = User.objects.create_user(username=username, email=email, password=password)
+        user = User.objects.create_user(
+            username=username, email=email, password=password
+        )
         logger.info(f"User created in DB: {user.id}, username: {username}")
 
         # Publish Kafka event

@@ -21,8 +21,18 @@ USER_TOPIC = "user_events"
 # ---------------------------------------------------------------------------
 # Kafka Producer Initialization
 # ---------------------------------------------------------------------------
-# This creates a Kafka producer instance that can publish messages to Kafka.
-producer = Producer({"bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS})
+_producer = None
+
+def get_producer() -> Producer:
+    """
+    Lazily create and return the Kafka producer.
+    If the producer already exists (_producer is not None), return it.
+    Otherwise, create a new Producer instance pointing to "kafka:9092" and cache it in _producer.
+    """
+    global _producer
+    if _producer is None:
+        _producer = Producer({"bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS})
+    return _producer
 
 # ---------------------------------------------------------------------------
 # Delivery callback
@@ -36,6 +46,7 @@ def delivery_report(err, msg):
     else:
         # Log successful delivery (topic + partition)
         logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}]")
+
 
 # ---------------------------------------------------------------------------
 # Event Publisher Function
@@ -51,6 +62,8 @@ def publish_user_created(user_id: int, username: str, email: str):
     Publishes a 'user_created' event to the Kafka 'user_events' topic.
     This event can then be consumed by other services asynchronously.
     """
+    producer = get_producer()
+
     # Construct the event payload
     event = {
         "event": "user_created",
@@ -65,8 +78,8 @@ def publish_user_created(user_id: int, username: str, email: str):
         # Publish event to Kafka
         producer.produce(
             USER_TOPIC,
-            value=json.dumps(event),      # encode event as JSON string
-            callback=delivery_report       # report delivery success/failure
+            value=json.dumps(event),  # encode event as JSON string
+            callback=delivery_report,  # report delivery success/failure
         )
 
         # Flush to ensure the message is sent immediately

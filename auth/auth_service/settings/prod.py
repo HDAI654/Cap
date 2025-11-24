@@ -6,8 +6,8 @@ LOGGING = {
     "formatters": {
         "json": {
             "format": '{"timestamp": "%(asctime)s", "level": "%(levelname)s", '
-                      '"logger": "%(name)s", "message": "%(message)s", '
-                      '"service": "auth-service", "module": "%(module)s"}'
+            '"logger": "%(name)s", "message": "%(message)s", '
+            '"service": "auth-service", "module": "%(module)s"}'
         },
     },
     "handlers": {

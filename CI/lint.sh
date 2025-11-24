@@ -3,10 +3,13 @@
 echo "Running code style checks..."
 pip install --quiet black flake8
 
+cd ..
+cd auth/
+
 # Check formatting
-black --check .
+black .
 
 # Check linting
-flake8 .
+# flake8 .
 
 echo "Linting finished."

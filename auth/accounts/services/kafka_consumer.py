@@ -36,6 +36,7 @@ EVENT_HANDLERS = {
     # "auth_event": handle_auth_event,
 }
 
+
 # ---------------------------------------------------------------------------
 # Kafka Consumer Coroutine
 # Listens for messages on the "user_events" topic, decodes them, and dispatches
@@ -45,8 +46,8 @@ async def consume():
     consumer = AIOKafkaConsumer(
         "user_events",
         bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),
-        group_id="auth-service",               # Ensures only one consumer in the group processes each message
-        auto_offset_reset="earliest"           # Start from earliest if no committed offset exists
+        group_id="auth-service",  # Ensures only one consumer in the group processes each message
+        auto_offset_reset="earliest",  # Start from earliest if no committed offset exists
     )
 
     logger.info("Starting Kafka consumer for topic 'user_events'...")
@@ -54,7 +55,9 @@ async def consume():
     await consumer.start()
     try:
         async for msg in consumer:
-            logger.info(f"Received message from Kafka. Offset={msg.offset}, Partition={msg.partition}")
+            logger.info(
+                f"Received message from Kafka. Offset={msg.offset}, Partition={msg.partition}"
+            )
 
             try:
                 # Decode JSON event

@@ -18,7 +18,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    #"apps.accounts",
+    # "apps.accounts",
 ]
 
 MIDDLEWARE = [
@@ -38,13 +38,13 @@ WSGI_APPLICATION = "auth_service.wsgi.application"
 ASGI_APPLICATION = "auth_service.asgi.application"
 
 DATABASES = {
-    "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL", "sqlite:///db.sqlite3")
-    )
+    "default": dj_database_url.parse(os.getenv("DATABASE_URL", "sqlite:///db.sqlite3"))
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
