@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Run linters (black, flake8) before tests
 
 echo "Running code style checks..."

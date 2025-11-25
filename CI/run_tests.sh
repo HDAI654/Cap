@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Run Django tests in isolated environment (local CI)
 
 set -e  # Exit immediately if a command fails
