@@ -58,7 +58,7 @@ class SignupView(APIView):
                 access_token,
                 httponly=True,
                 secure=True,
-                samesite="Strict",
+                samesite="Lax",
                 max_age=access_max_age,
             )
 
@@ -67,7 +67,7 @@ class SignupView(APIView):
                 refresh_token,
                 httponly=True,
                 secure=True,
-                samesite="Strict",
+                samesite="Lax",
                 max_age=refresh_max_age,
             )
 
@@ -114,10 +114,10 @@ class LoginView(APIView):
         refresh_age = settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400
 
         response.set_cookie(
-            "access", access, httponly=True, secure=True, samesite="Strict", max_age=access_age
+            "access", access, httponly=True, secure=True, samesite="Lax", max_age=access_age
         )
         response.set_cookie(
-            "refresh", refresh, httponly=True, secure=True, samesite="Strict", max_age=refresh_age
+            "refresh", refresh, httponly=True, secure=True, samesite="Lax", max_age=refresh_age
         )
 
         return response
@@ -161,7 +161,7 @@ class RefreshTokenView(APIView):
                 new_access,
                 httponly=True,
                 secure=True,
-                samesite="Strict",
+                samesite="Lax",
                 max_age=max_age,
             )
             return response
