@@ -16,6 +16,10 @@ services:
       DJANGO_SUPERUSER_USERNAME: hamed_amiri
       DJANGO_SUPERUSER_EMAIL: admin@example.com
       DJANGO_SUPERUSER_PASSWORD: SuperSecret123
+
+      JWT_SECRET: supersecretkey
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 15
     depends_on:
       - auth-db
       - kafka
