@@ -8,10 +8,13 @@ from .services.user_services import signup_user
 from .services.jwt_service import create_access_token, create_refresh_token, decode_token
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 logger = logging.getLogger(__name__)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class SignupView(APIView):
     """
     Signup endpoint with JWT support for Web & Mobile.
@@ -80,6 +83,7 @@ class SignupView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     """
     Login endpoint for Web & Android.
@@ -122,6 +126,7 @@ class LoginView(APIView):
 
         return response
 
+@method_decorator(csrf_exempt, name='dispatch')
 class RefreshTokenView(APIView):
     """
     Refresh access token for Web (cookie) & Android (JSON).
