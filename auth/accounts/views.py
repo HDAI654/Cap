@@ -6,6 +6,7 @@ from rest_framework import status
 from .serializers import SignupSerializer
 from .services.user_services import signup_user
 from .services.jwt_service import create_access_token, create_refresh_token, decode_token
+from .services.response_services import TokenResponseService
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
@@ -41,40 +42,9 @@ class SignupView(APIView):
             access_token = create_access_token(user.id, user.username)
             refresh_token = create_refresh_token(user.id)
 
-            client_type = request.headers.get("X-Client", "web").lower()
-            response_data = {"message": "User created successfully"}
-
-            # Android client → tokens returned as JSON
-            if client_type == "android":
-                response_data["access_token"] = access_token
-                response_data["refresh_token"] = refresh_token
-                return Response(response_data, status=status.HTTP_201_CREATED)
-
-            # Web client → tokens stored in secure cookies
-            response = Response(response_data, status=status.HTTP_201_CREATED)
-
-            access_max_age = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-            refresh_max_age = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
-
-            response.set_cookie(
-                "access",
-                access_token,
-                httponly=True,
-                secure=True,
-                samesite="Lax",
-                max_age=access_max_age,
+            return TokenResponseService.build_response(
+                request, access_token, refresh_token, message="User created successfully"
             )
-
-            response.set_cookie(
-                "refresh",
-                refresh_token,
-                httponly=True,
-                secure=True,
-                samesite="Lax",
-                max_age=refresh_max_age,
-            )
-
-            return response
 
         except Exception as e:
             logger.error(f"Error during signup: {e}", exc_info=True)
@@ -82,6 +52,7 @@ class SignupView(APIView):
                 {"error": "Failed to create user"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
@@ -99,32 +70,12 @@ class LoginView(APIView):
 
         logger.info(f"Login successful for user_id={user.id}")
 
-        access = create_access_token(user.id, user.username)
-        refresh = create_refresh_token(user.id)
+        access_token = create_access_token(user.id, user.username)
+        refresh_token = create_refresh_token(user.id)
 
-        client_type = request.headers.get("X-Client", "web").lower()
-
-        # ANDROID → return tokens in JSON
-        if client_type == "android":
-            return Response({
-                "access": access,
-                "refresh": refresh
-            }, status=status.HTTP_200_OK)
-
-        # WEB → send tokens in cookies
-        response = Response({"message": "Login successful"}, status=status.HTTP_200_OK)
-
-        access_age = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-        refresh_age = settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400
-
-        response.set_cookie(
-            "access", access, httponly=True, secure=True, samesite="Lax", max_age=access_age
+        return TokenResponseService.build_response(
+            request, access_token, refresh_token, message="User created successfully"
         )
-        response.set_cookie(
-            "refresh", refresh, httponly=True, secure=True, samesite="Lax", max_age=refresh_age
-        )
-
-        return response
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RefreshTokenView(APIView):

@@ -1,5 +1,5 @@
 services:
-  # FastAPI Auth Service
+  # Auth Service
   auth-service:
     build:
       context: ./auth
@@ -17,7 +17,7 @@ services:
       DJANGO_SUPERUSER_EMAIL: admin@example.com
       DJANGO_SUPERUSER_PASSWORD: SuperSecret123
 
-      JWT_SECRET: supersecretkey
+      JWT_SECRET: Jm8yT0fZq9LwB7sV4eF3hC1gKp6xS2uRz8Wn5Yd0Qv3tHr9mE1aP7oG4lN6bC2XyQ9Ts3Wj5Kh8Fv1R
       JWT_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 30
@@ -53,6 +53,7 @@ services:
     volumes:
       - auth_db_data:/var/lib/postgresql/data
 
+  # Light CRUD system for auth-db
   adminer:
     image: adminer
     restart: always
