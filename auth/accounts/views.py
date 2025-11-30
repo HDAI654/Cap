@@ -4,13 +4,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SignupSerializer
-from .services.user_services import signup_user
+from .services.user_services import create_user
 from .services.jwt_service import create_access_token, create_refresh_token, decode_token
 from .services.response_services import TokenResponseService
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from .utils.crypto_utils import IDGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class SignupView(APIView):
         try:
             data = serializer.validated_data
 
-            user = signup_user(
+            user = create_user(
                 username=data["username"],
                 email=data["email"],
                 password=data["password"],
@@ -39,8 +40,10 @@ class SignupView(APIView):
 
             logger.info(f"Signup successful for user_id={user.id}")
 
+            session_id = IDGenerator.random_hex()
+
             access_token = create_access_token(user.id, user.username)
-            refresh_token = create_refresh_token(user.id)
+            refresh_token = create_refresh_token(user.id, user.username, session_id)
 
             return TokenResponseService.build_response(
                 request, access_token, refresh_token, message="User created successfully"

@@ -21,6 +21,8 @@ services:
       JWT_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 30
+
+      REDIS_AUTH_URL: redis://redis-auth:6379/0
     depends_on:
       - auth-db
       - kafka
@@ -38,6 +40,16 @@ services:
     depends_on:
       - auth-db
       - kafka
+
+  # Redis for Auth service
+  redis-auth:
+    image: redis:7
+    container_name: redis-auth
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_auth_data:/data
 
   # PostgreSQL DB for Auth
   auth-db:
@@ -106,3 +118,4 @@ volumes:
   auth_db_data:
   kafka_data:
   zookeeper_data:
+  redis-auth:

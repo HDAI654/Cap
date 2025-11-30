@@ -5,7 +5,7 @@ from .kafka_producer import publish_user_created
 logger = logging.getLogger(__name__)
 
 
-def signup_user(username: str, email: str, password: str) -> User:
+def create_user(username: str, email: str, password: str) -> User:
     """
     Business logic for signing up a new user.
 
