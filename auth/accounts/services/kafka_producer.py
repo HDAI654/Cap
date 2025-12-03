@@ -23,6 +23,7 @@ USER_TOPIC = "user_events"
 # ---------------------------------------------------------------------------
 _producer = None
 
+
 def get_producer() -> Producer:
     """
     Lazily create and return the Kafka producer.
@@ -33,6 +34,7 @@ def get_producer() -> Producer:
     if _producer is None:
         _producer = Producer({"bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS})
     return _producer
+
 
 # ---------------------------------------------------------------------------
 # Delivery callback

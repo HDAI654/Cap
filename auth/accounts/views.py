@@ -20,7 +20,7 @@ from .services.session_service import SessionManager
 logger = logging.getLogger(__name__)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class SignupView(APIView):
     """
     Signup endpoint with JWT support for Web & Mobile.
@@ -50,10 +50,15 @@ class SignupView(APIView):
             session.save()
 
             access_token = JWT_Tools.create_access_token(user.id, user.username)
-            refresh_token = JWT_Tools.create_refresh_token(user.id, user.username, session.id)
+            refresh_token = JWT_Tools.create_refresh_token(
+                user.id, user.username, session.id
+            )
 
             return TokenResponseService.build_response(
-                request, access_token, refresh_token, message="User created successfully"
+                request,
+                access_token,
+                refresh_token,
+                message="User created successfully",
             )
 
         except Exception as e:
@@ -63,7 +68,8 @@ class SignupView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-@method_decorator(csrf_exempt, name='dispatch')
+
+@method_decorator(csrf_exempt, name="dispatch")
 class LoginView(APIView):
     """
     Login endpoint for Web & Android.
@@ -75,7 +81,9 @@ class LoginView(APIView):
 
         user = authenticate(username=username, password=password)
         if not user:
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
         logger.info(f"Login successful for user_id={user.id}")
 
@@ -86,7 +94,8 @@ class LoginView(APIView):
             request, access_token, refresh_token, message="User created successfully"
         )
 
-@method_decorator(csrf_exempt, name='dispatch')
+
+@method_decorator(csrf_exempt, name="dispatch")
 class RefreshTokenView(APIView):
     """
     Refresh access token for Web (cookie) & Android (JSON).
@@ -103,13 +112,18 @@ class RefreshTokenView(APIView):
             refresh_token = request.COOKIES.get("refresh")
 
         if not refresh_token:
-            return Response({"error": "Refresh token missing"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Refresh token missing"}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
         try:
             payload = decode_token(refresh_token)
 
             if payload["type"] != "refresh":
-                return Response({"error": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response(
+                    {"error": "Invalid refresh token"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
 
             new_access = create_access_token(payload["sub"], "unknown")
 
@@ -132,7 +146,11 @@ class RefreshTokenView(APIView):
             return response
 
         except jwt.ExpiredSignatureError:
-            return Response({"error": "Refresh token expired"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Refresh token expired"}, status=status.HTTP_401_UNAUTHORIZED
+            )
         except Exception as e:
             logger.error(f"Refresh error: {e}", exc_info=True)
-            return Response({"error": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED
+            )

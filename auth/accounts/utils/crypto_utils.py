@@ -1,6 +1,7 @@
 import secrets
 import uuid
 
+
 class IDGenerator:
     @staticmethod
     def random_hex(length=32):

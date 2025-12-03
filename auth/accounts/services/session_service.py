@@ -10,7 +10,13 @@ redis_client = get_redis_client()
 
 
 class Session:
-    def __init__(self, user_id: int, device: str, id: str = None, created_at: Optional[datetime] = None):
+    def __init__(
+        self,
+        user_id: int,
+        device: str,
+        id: str = None,
+        created_at: Optional[datetime] = None,
+    ):
         self.user_id = user_id
         self.device = device
         self.created_at = created_at or datetime.utcnow()
@@ -27,7 +33,9 @@ class Session:
     def revoke(self):
         logger.info(
             "Revoking session: session_id=%s user_id=%s device=%s",
-            self.id, self.user_id, self.device
+            self.id,
+            self.user_id,
+            self.device,
         )
 
         self.delete()
@@ -43,28 +51,36 @@ class Session:
 
         logger.info(
             "Deleting session: session_key=%s user_sessions_key=%s session_id=%s",
-            key_session, key_user_sessions, self.id
+            key_session,
+            key_user_sessions,
+            self.id,
         )
 
         try:
             deleted_hash = redis_client.delete(key_session)
             logger.debug(
                 "Deleted session hash: key=%s deleted=%s",
-                key_session, bool(deleted_hash)
+                key_session,
+                bool(deleted_hash),
             )
         except Exception as e:
-            logger.error("Failed deleting session hash: key=%s error=%s", key_session, e)
+            logger.error(
+                "Failed deleting session hash: key=%s error=%s", key_session, e
+            )
 
         try:
             removed = redis_client.lrem(key_user_sessions, 0, self.id)
             logger.debug(
                 "Removed session ID from user list: key=%s removed=%s",
-                key_user_sessions, removed
+                key_user_sessions,
+                removed,
             )
         except Exception as e:
             logger.error(
                 "Failed removing session from user session list: key=%s session_id=%s error=%s",
-                key_user_sessions, self.id, e
+                key_user_sessions,
+                self.id,
+                e,
             )
 
     def save(self):
@@ -74,7 +90,10 @@ class Session:
 
         logger.info(
             "Saving session: session_id=%s user_id=%s device=%s ttl=%s",
-            self.id, self.user_id, self.device, ttl_seconds
+            self.id,
+            self.user_id,
+            self.device,
+            ttl_seconds,
         )
 
         try:
@@ -90,9 +109,7 @@ class Session:
 
             logger.debug("Saved session hash and set TTL: key=%s", key_session)
         except Exception as e:
-            logger.error(
-                "Failed saving session hash: key=%s error=%s", key_session, e
-            )
+            logger.error("Failed saving session hash: key=%s error=%s", key_session, e)
 
         try:
             redis_client.rpush(key_user_sessions, self.id)
@@ -100,15 +117,19 @@ class Session:
 
             logger.debug(
                 "Pushed session ID to user list and set TTL: key=%s session_id=%s",
-                key_user_sessions, self.id,
+                key_user_sessions,
+                self.id,
             )
         except Exception as e:
             logger.error(
                 "Failed pushing session to user list: key=%s session_id=%s error=%s",
-                key_user_sessions, self.id, e
+                key_user_sessions,
+                self.id,
+                e,
             )
 
         return self
+
 
 class SessionManager:
 
@@ -133,8 +154,7 @@ class SessionManager:
             created_at = datetime.fromisoformat(data[b"created_at"].decode())
         except Exception as e:
             logger.error(
-                "Failed decoding session hash fields: key=%s error=%s",
-                key_session, e
+                "Failed decoding session hash fields: key=%s error=%s", key_session, e
             )
             return None
 
@@ -157,7 +177,8 @@ class SessionManager:
         except Exception as e:
             logger.error(
                 "Failed fetching user session list: key=%s error=%s",
-                key_user_sessions, e
+                key_user_sessions,
+                e,
             )
             return []
 
@@ -172,12 +193,14 @@ class SessionManager:
             else:
                 logger.warning(
                     "Session ID referenced in user list but not found: user_id=%s session_id=%s",
-                    user_id, sid
+                    user_id,
+                    sid,
                 )
 
         logger.info(
             "Completed fetching user sessions: user_id=%s total_sessions=%s",
-            user_id, len(sessions)
+            user_id,
+            len(sessions),
         )
         return sessions
 

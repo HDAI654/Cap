@@ -1,9 +1,9 @@
-# tests/test_jwt_tools_django.py
 from django.test import TestCase
 from django.conf import settings
 import jwt
 from datetime import datetime, timedelta
 from ...services.jwt_service import JWT_Tools
+
 
 class JWTToolsTestCase(TestCase):
 
@@ -20,7 +20,9 @@ class JWTToolsTestCase(TestCase):
         token = JWT_Tools.create_access_token(user_id, username)
         self.assertIsInstance(token, str)
 
-        decoded = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        decoded = jwt.decode(
+            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
+        )
         self.assertEqual(decoded["sub"], user_id)
         self.assertEqual(decoded["username"], username)
         self.assertEqual(decoded["type"], "access")
@@ -34,7 +36,9 @@ class JWTToolsTestCase(TestCase):
         token = JWT_Tools.create_refresh_token(user_id, username, session_id)
         self.assertIsInstance(token, str)
 
-        decoded = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        decoded = jwt.decode(
+            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
+        )
         self.assertEqual(decoded["sub"], user_id)
         self.assertEqual(decoded["username"], username)
         self.assertEqual(decoded["sid"], session_id)
@@ -63,9 +67,11 @@ class JWTToolsTestCase(TestCase):
             "sub": 1,
             "username": "expired_user",
             "exp": past_time,
-            "type": "access"
+            "type": "access",
         }
-        token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+        token = jwt.encode(
+            payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
+        )
 
         with self.assertRaises(jwt.exceptions.ExpiredSignatureError):
             JWT_Tools.decode_token(token)

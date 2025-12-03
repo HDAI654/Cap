@@ -1,4 +1,4 @@
-'''import jwt
+"""import jwt
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -125,7 +125,7 @@ class AuthTests(APITestCase):
             email="test@example.com",
             password="testpass123"
         )
-   
+
     def test_refresh_android_success(self):
         user = self.create_user()
 
@@ -221,4 +221,4 @@ class AuthTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertIn("Invalid", response.data["error"])
-'''
+"""
