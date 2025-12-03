@@ -14,7 +14,7 @@ from .serializers import SignupSerializer
 from .services.user_services import create_user
 from .services.jwt_service import JWT_Tools
 from .services.response_services import TokenResponseService
-from services.session_service import SessionManager
+from .services.session_service import SessionManager
 
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,6 @@ class SignupView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-'''
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     """
@@ -137,5 +136,3 @@ class RefreshTokenView(APIView):
         except Exception as e:
             logger.error(f"Refresh error: {e}", exc_info=True)
             return Response({"error": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
-
-'''
