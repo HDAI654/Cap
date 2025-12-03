@@ -35,6 +35,8 @@ class Session:
         self.created_at = datetime.utcnow()
         self.save()
 
+        return self
+
     def delete(self):
         key_session = f"session:{self.id}"
         key_user_sessions = f"user:{self.user_id}"
@@ -108,7 +110,6 @@ class Session:
 
         return self
 
-
 class SessionManager:
 
     @staticmethod
@@ -179,3 +180,7 @@ class SessionManager:
             user_id, len(sessions)
         )
         return sessions
+
+    @staticmethod
+    def new_session(user_id: int, device: str) -> Session:
+        return Session(user_id=user_id, device=device)
