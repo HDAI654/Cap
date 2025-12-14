@@ -22,7 +22,6 @@ def create_user(username: str, email: str, password: str) -> User:
 
         # Publish Kafka event
         publish_user_created(user.id, username, email)
-        logger.info(f"Published user_created event for user_id={user.id}")
 
         return user
     except Exception as e:

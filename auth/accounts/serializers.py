@@ -9,7 +9,7 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ["username", "email", "password"]
 
-    def create(self, validated_data):
+'''    def create(self, validated_data):
         """
         Create a new user with a hashed password.
         """
@@ -18,4 +18,4 @@ class SignupSerializer(serializers.ModelSerializer):
             email=validated_data["email"],
             password=validated_data["password"],
         )
-        return user
+        return user'''

@@ -35,7 +35,6 @@ class SignupView(APIView):
 
         try:
             data = serializer.validated_data
-
             user = create_user(
                 username=data["username"],
                 email=data["email"],
@@ -87,8 +86,8 @@ class LoginView(APIView):
 
         logger.info(f"Login successful for user_id={user.id}")
 
-        access_token = create_access_token(user.id, user.username)
-        refresh_token = create_refresh_token(user.id)
+        access_token = JWT_Tools.create_access_token(user.id, user.username)
+        refresh_token = JWT_Tools.create_refresh_token(user.id)
 
         return TokenResponseService.build_response(
             request, access_token, refresh_token, message="User created successfully"
@@ -117,7 +116,7 @@ class RefreshTokenView(APIView):
             )
 
         try:
-            payload = decode_token(refresh_token)
+            payload = JWT_Tools.decode_token(refresh_token)
 
             if payload["type"] != "refresh":
                 return Response(
@@ -125,7 +124,7 @@ class RefreshTokenView(APIView):
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
-            new_access = create_access_token(payload["sub"], "unknown")
+            new_access = JWT_Tools.create_access_token(payload["sub"], "unknown")
 
             # ANDROID → return new access token in JSON
             if client_type == "android":

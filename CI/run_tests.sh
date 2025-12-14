@@ -16,7 +16,7 @@ python manage.py makemigrations --check --dry-run
 python manage.py migrate --noinput
 
 # Run tests with verbose output
-python manage.py test --verbosity=2
+exec python manage.py test --verbosity=2
 
 echo
 echo "========== CI: Tests finished =========="

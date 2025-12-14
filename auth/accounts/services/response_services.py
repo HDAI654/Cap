@@ -17,7 +17,7 @@ class TokenResponseService:
         response = Response({"message": message}, status=200)
 
         access_age = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-        refresh_age = settings.ACCESS_TOKEN_EXPIRE_DAYS * 24 * 3600
+        refresh_age = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
 
         response.set_cookie(
             "access",
