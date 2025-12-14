@@ -1,16 +1,24 @@
-from django.test import TestCase
-from accounts.services.user_services import create_user
+import pytest
 from django.contrib.auth.models import User
-from unittest.mock import patch
+from accounts.services.user_services import create_user
 
 
-class UserServiceTest(TestCase):
-    @patch("accounts.services.user_services.publish_user_created")
-    def test_create_user_creates_user(self, mock_publish):
-        user = create_user("serviceuser", "service@example.com", "strongpassword")
+@pytest.mark.django_db
+def test_create_user_creates_user(mocker):
+    # Mock Kafka publisher
+    mock_publish = mocker.patch(
+        "accounts.services.user_services.publish_user_created"
+    )
 
-        self.assertEqual(user.username, "serviceuser")
-        self.assertTrue(User.objects.filter(username="serviceuser").exists())
+    user = create_user(
+        username="serviceuser",
+        email="service@example.com",
+        password="strongpassword",
+    )
 
-        # ensures Kafka function was triggered, but no real connection happens
-        mock_publish.assert_called_once()
+    # --- Assertions ---
+    assert user.username == "serviceuser"
+    assert User.objects.filter(username="serviceuser").exists()
+
+    # Kafka publish was triggered (but no real connection)
+    mock_publish.assert_called_once()

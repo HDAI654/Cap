@@ -1,110 +1,122 @@
-import unittest
-from datetime import datetime, timedelta
-from unittest.mock import patch
+import pytest
 import fakeredis
-from django.test import TestCase
 from ...services.session_service import SessionManager
 
 
-class SessionTests(TestCase):
-    def setUp(self):
-        self.fake_redis = fakeredis.FakeStrictRedis()
+@pytest.fixture(autouse=True)
+def fake_redis(mocker):
+    """Provides a patched redis_client inside SessionManager."""
+    fake = fakeredis.FakeStrictRedis()
+    mocker.patch(
+        "auth.accounts.services.session_service.redis_client",
+        fake,
+    )
+    return fake
 
-        # Patch the function INSIDE session_service
-        patcher = patch(
-            "auth.accounts.services.session_service.redis_client", self.fake_redis
-        )
-        self.mock_redis = patcher.start()
-        self.addCleanup(patcher.stop)
 
-        self.user_id = 42
-        self.device = "test-device"
+@pytest.fixture
+def user_id():
+    return 42
 
-    def test_new_session_creation(self):
-        session = SessionManager.new_session(self.user_id, self.device)
-        self.assertIsNotNone(session.id)
-        self.assertEqual(session.user_id, self.user_id)
-        self.assertEqual(session.device, self.device)
 
-    def test_save_session_creates_redis_keys(self):
-        session = SessionManager.new_session(self.user_id, self.device)
-        session.save()
+@pytest.fixture
+def device():
+    return "test-device"
 
-        # Check session hash
-        key_session = f"session:{session.id}"
-        self.assertTrue(self.fake_redis.exists(key_session))
-        data = self.fake_redis.hgetall(key_session)
-        self.assertEqual(data[b"user_id"].decode(), str(self.user_id))
-        self.assertEqual(data[b"device"].decode(), self.device)
 
-        # Check user session list
-        key_user_sessions = f"user:{self.user_id}"
-        session_ids = self.fake_redis.lrange(key_user_sessions, 0, -1)
-        self.assertIn(session.id.encode(), session_ids)
+@pytest.mark.django_db
+def test_new_session_creation(user_id, device):
+    session = SessionManager.new_session(user_id, device)
+    assert session.id is not None
+    assert session.user_id == user_id
+    assert session.device == device
 
-    def test_delete_session_removes_redis_keys(self):
-        session = SessionManager.new_session(self.user_id, self.device)
-        session.save()
 
-        session.delete()
+@pytest.mark.django_db
+def test_save_session_creates_redis_keys(fake_redis, user_id, device):
+    session = SessionManager.new_session(user_id, device)
+    session.save()
 
-        key_session = f"session:{session.id}"
-        key_user_sessions = f"user:{self.user_id}"
+    # Check session hash
+    key_session = f"session:{session.id}"
+    assert fake_redis.exists(key_session)
+    data = fake_redis.hgetall(key_session)
+    assert data[b"user_id"].decode() == str(user_id)
+    assert data[b"device"].decode() == device
 
-        self.assertFalse(self.fake_redis.exists(key_session))
-        self.assertNotIn(
-            session.id.encode(), self.fake_redis.lrange(key_user_sessions, 0, -1)
-        )
+    # Check user session list
+    key_user_sessions = f"user:{user_id}"
+    session_ids = fake_redis.lrange(key_user_sessions, 0, -1)
+    assert session.id.encode() in session_ids
 
-    def test_revoke_session_regenerates_id_and_saves(self):
-        session = SessionManager.new_session(self.user_id, self.device)
-        session.save()
-        old_id = session.id
 
-        session.revoke()
-        self.assertNotEqual(old_id, session.id)
+@pytest.mark.django_db
+def test_delete_session_removes_redis_keys(fake_redis, user_id, device):
+    session = SessionManager.new_session(user_id, device)
+    session.save()
 
-        # Old session hash should be gone
-        self.assertFalse(self.fake_redis.exists(f"session:{old_id}"))
-        # New session hash should exist
-        self.assertTrue(self.fake_redis.exists(f"session:{session.id}"))
-        # User session list should contain new id
-        key_user_sessions = f"user:{self.user_id}"
-        self.assertIn(
-            session.id.encode(), self.fake_redis.lrange(key_user_sessions, 0, -1)
-        )
-        self.assertNotIn(
-            old_id.encode(), self.fake_redis.lrange(key_user_sessions, 0, -1)
-        )
+    session.delete()
 
-    def test_get_session_returns_correct_session(self):
-        session = SessionManager.new_session(self.user_id, self.device)
-        session.save()
+    key_session = f"session:{session.id}"
+    key_user_sessions = f"user:{user_id}"
 
-        fetched = SessionManager.get_session(session.id)
-        self.assertIsNotNone(fetched)
-        self.assertEqual(fetched.id, session.id)
-        self.assertEqual(fetched.user_id, session.user_id)
-        self.assertEqual(fetched.device, session.device)
+    assert not fake_redis.exists(key_session)
+    assert session.id.encode() not in fake_redis.lrange(key_user_sessions, 0, -1)
 
-    def test_get_session_returns_none_if_missing(self):
-        fetched = SessionManager.get_session("nonexistent")
-        self.assertIsNone(fetched)
 
-    def test_get_user_sessions_returns_all_sessions(self):
-        sessions = [
-            SessionManager.new_session(self.user_id, self.device) for _ in range(3)
-        ]
-        for s in sessions:
-            s.save()
+@pytest.mark.django_db
+def test_revoke_session_regenerates_id_and_saves(fake_redis, user_id, device):
+    session = SessionManager.new_session(user_id, device)
+    session.save()
+    old_id = session.id
 
-        user_sessions = SessionManager.get_user_sessions(self.user_id)
-        self.assertEqual(len(user_sessions), 3)
-        session_ids = [s.id for s in sessions]
-        fetched_ids = [s.id for s in user_sessions]
-        for sid in session_ids:
-            self.assertIn(sid, fetched_ids)
+    session.revoke()
+    assert old_id != session.id
 
-    def test_get_user_sessions_returns_empty_if_none(self):
-        user_sessions = SessionManager.get_user_sessions(9999)
-        self.assertEqual(user_sessions, [])
+    # Old session hash should be gone
+    assert not fake_redis.exists(f"session:{old_id}")
+    # New session hash should exist
+    assert fake_redis.exists(f"session:{session.id}")
+    # User session list should contain new id
+    key_user_sessions = f"user:{user_id}"
+    session_list = fake_redis.lrange(key_user_sessions, 0, -1)
+    assert session.id.encode() in session_list
+    assert old_id.encode() not in session_list
+
+
+@pytest.mark.django_db
+def test_get_session_returns_correct_session(user_id, device):
+    session = SessionManager.new_session(user_id, device)
+    session.save()
+
+    fetched = SessionManager.get_session(session.id)
+    assert fetched is not None
+    assert fetched.id == session.id
+    assert fetched.user_id == session.user_id
+    assert fetched.device == session.device
+
+
+@pytest.mark.django_db
+def test_get_session_returns_none_if_missing():
+    fetched = SessionManager.get_session("nonexistent")
+    assert fetched is None
+
+
+@pytest.mark.django_db
+def test_get_user_sessions_returns_all_sessions(user_id, device):
+    sessions = [SessionManager.new_session(user_id, device) for _ in range(3)]
+    for s in sessions:
+        s.save()
+
+    user_sessions = SessionManager.get_user_sessions(user_id)
+    assert len(user_sessions) == 3
+    session_ids = [s.id for s in sessions]
+    fetched_ids = [s.id for s in user_sessions]
+    for sid in session_ids:
+        assert sid in fetched_ids
+
+
+@pytest.mark.django_db
+def test_get_user_sessions_returns_empty_if_none():
+    user_sessions = SessionManager.get_user_sessions(9999)
+    assert user_sessions == []

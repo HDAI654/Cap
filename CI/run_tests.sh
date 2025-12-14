@@ -1,22 +1,18 @@
 #!/bin/sh
 
-# Run Django tests in isolated environment (local CI)
+set -e
 
-set -e  # Exit immediately if a command fails
 echo "========== Starting CI: running tests... =========="
 cd ..
 cd auth/
 
-# Export settings (adjust if needed)
+# Django settings for pytest-django
 export DJANGO_SETTINGS_MODULE=auth_service.settings.dev
 
-# Run migrations in test DB
+# Optional but recommended: ensure migrations are valid
 python manage.py makemigrations --check --dry-run
 
-python manage.py migrate --noinput
+# Run pytest
+pytest -v
 
-# Run tests with verbose output
-exec python manage.py test --verbosity=2
-
-echo
 echo "========== CI: Tests finished =========="
