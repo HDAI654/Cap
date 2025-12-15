@@ -78,9 +78,7 @@ def test_expired_token():
         "exp": past_time,
         "type": "access",
     }
-    token = jwt.encode(
-        payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
-    )
+    token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
     with pytest.raises(jwt.exceptions.ExpiredSignatureError):
         JWT_Tools.decode_token(token)

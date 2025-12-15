@@ -1,125 +1,158 @@
-'''from django.test import TestCase
+import pytest
 from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APIClient
-from unittest.mock import patch
-import fakeredis
 from django.contrib.auth import get_user_model
-import jwt
-from django.conf import settings
-from ...services.jwt_service import JWT_Tools
-from auth.accounts.services.user_services import publish_user_created
+from rest_framework import status
+import fakeredis
+
+from accounts.services.jwt_service import JWT_Tools
 
 User = get_user_model()
 
 
-class SignupViewTests(TestCase):
+@pytest.fixture
+def signup_url():
+    return reverse("signup")
+
+
+@pytest.fixture(autouse=True)
+def patch_redis(mocker):
     """
-    Tests for SignupView.
+    Patch redis client used by SessionManager for all tests.
+    """
+    fake = fakeredis.FakeStrictRedis()
+    mocker.patch(
+        "accounts.services.session_service.redis_client",
+        fake,
+    )
+    return fake
+
+
+@pytest.fixture
+def valid_payload():
+    return {
+        "username": "testuser",
+        "email": "testuser@example.com",
+        "password": "StrongPassword123!",
+    }
+
+
+@pytest.mark.django_db
+def test_signup_success_web(client, mocker, signup_url, valid_payload):
+    """
+    WEB client:
+    - user created
+    - cookies set
+    - no tokens in JSON body
     """
 
-    def setUp(self):
-        self.client = APIClient()
-        self.url = reverse("signup")
-        # Patch the function
-        self.fake_redis = fakeredis.FakeStrictRedis()
-        patcher = patch(
-            "auth.accounts.services.session_service.redis_client", self.fake_redis
-        )
-        self.mock_redis = patcher.start()
-        self.addCleanup(patcher.stop)
+    mocker.patch("accounts.services.user_services.publish_user_created")
 
-         # --- Patch Kafka globally ---
-        get_producer_patcher = patch(
-            "auth.accounts.services.kafka_producer.get_producer",
-            return_value=None 
-        )
-        self.mock_get_producer = get_producer_patcher.start()
-        self.addCleanup(get_producer_patcher.stop)
+    response = client.post(
+        signup_url,
+        valid_payload,
+        format="json",
+        HTTP_USER_AGENT="pytest-agent",
+    )
 
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == {"message": "User created successfully"}
 
-        self.valid_payload = {
-            "username": "testuser",
-            "email": "testuser@example.com",
-            "password": "StrongPassword123!",
-        }
-    def test_signup_success(self):
-        response = self.client.post(
-            self.url,
-            data=self.valid_payload,
-            format="json",
-            HTTP_USER_AGENT="pytest-agent",
-        )
+    # --- User created ---
+    user = User.objects.get(username="testuser")
+    assert user.email == "testuser@example.com"
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    # --- Cookies set ---
+    assert "access" in response.cookies
+    assert "refresh" in response.cookies
 
-        # --- User created ---
-        self.assertTrue(
-            User.objects.filter(
-                username=self.valid_payload["username"],
-                email=self.valid_payload["email"],
-            ).exists()
-        )
+    access_token = response.cookies["access"].value
+    refresh_token = response.cookies["refresh"].value
 
-        # --- Tokens exist ---
-        self.assertIn("access", response.data)
-        self.assertIn("refresh", response.data)
+    # --- Tokens valid ---
+    access_payload = JWT_Tools.decode_token(access_token)
+    refresh_payload = JWT_Tools.decode_token(refresh_token)
 
-        # --- Tokens valid ---
-        access_payload = JWT_Tools.decode_token(response.data["access"])
-        refresh_payload = JWT_Tools.decode_token(response.data["refresh"])
-
-        self.assertEqual(access_payload["username"], "testuser")
-        self.assertEqual(access_payload["user_id"], refresh_payload["user_id"])
-
-        # --- Session stored ---
-        self.assertTrue(self.mock_redis.set.called)
+    assert access_payload["sub"] == user.id
+    assert refresh_payload["sub"] == user.id
+    assert refresh_payload["type"] == "refresh"
 
 
-    def test_signup_validation_error(self):
-        """
-        Invalid payload returns 400 and serializer errors.
-        """
+@pytest.mark.django_db
+def test_signup_success_android(client, mocker, signup_url, valid_payload):
+    """
+    ANDROID client:
+    - tokens returned in JSON
+    - no cookies
+    """
 
-        invalid_payload = {
-            "username": "",
-            "email": "invalid-email",
-            "password": "",
-        }
+    mocker.patch("accounts.services.user_services.publish_user_created")
 
-        response = self.client.post(
-            self.url,
-            data=invalid_payload,
-            format="json",
-        )
+    response = client.post(
+        signup_url,
+        valid_payload,
+        format="json",
+        HTTP_USER_AGENT="pytest-agent",
+        HTTP_X_CLIENT="android",
+    )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIsInstance(response.data, dict)
+    assert response.status_code == status.HTTP_200_OK
 
-    @patch("auth.accounts.services.user_services.create_user")
-    def test_signup_internal_error(self, mock_create_user):
-        """
-        Any unexpected exception returns HTTP 500.
-        """
+    assert "access" in response.data
+    assert "refresh" in response.data
+    assert response.data["message"] == "User created successfully"
 
-        mock_create_user.side_effect = Exception("DB failure")
+    # --- No cookies ---
+    assert "access" not in response.cookies
+    assert "refresh" not in response.cookies
 
-        response = self.client.post(
-            self.url,
-            data=self.valid_payload,
-            format="json",
-        )
+    # --- Tokens valid ---
+    access_payload = JWT_Tools.decode_token(response.data["access"])
+    refresh_payload = JWT_Tools.decode_token(response.data["refresh"])
 
-        self.assertEqual(
-            response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-        self.assertEqual(response.data, {"error": "Failed to create user"})
+    assert access_payload["username"] == "testuser"
+    assert refresh_payload["type"] == "refresh"
 
-    def test_signup_requires_post_method(self):
-        """
-        GET method should not be allowed.
-        """
 
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
- '''
+@pytest.mark.django_db
+def test_signup_validation_error(client, signup_url):
+    """
+    Invalid payload returns 400 with serializer errors.
+    """
+    response = client.post(
+        signup_url,
+        {"username": "", "email": "invalid", "password": ""},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert isinstance(response.data, dict)
+
+
+@pytest.mark.django_db
+def test_signup_internal_error(client, mocker, signup_url, valid_payload):
+    """
+    Unexpected exception returns HTTP 500.
+    """
+
+    mocker.patch(
+        "accounts.services.user_services.create_user",
+        side_effect=Exception("DB failure"),
+    )
+
+    response = client.post(
+        signup_url,
+        valid_payload,
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.data == {"error": "Failed to create user"}
+
+
+@pytest.mark.django_db
+def test_signup_requires_post_method(client, signup_url):
+    """
+    GET method is not allowed.
+    """
+    response = client.get(signup_url)
+    assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED

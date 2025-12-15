@@ -86,7 +86,7 @@ def publish_user_created(user_id: int, username: str, email: str):
 
         # Flush to ensure the message is sent immediately
         producer.flush()
-        
+
         logger.info(f"Published user_created event for user_id={user_id}")
 
     except Exception as e:

@@ -6,9 +6,7 @@ from accounts.services.user_services import create_user
 @pytest.mark.django_db
 def test_create_user_creates_user(mocker):
     # Mock Kafka publisher
-    mock_publish = mocker.patch(
-        "accounts.services.user_services.publish_user_created"
-    )
+    mock_publish = mocker.patch("accounts.services.user_services.publish_user_created")
 
     user = create_user(
         username="serviceuser",
