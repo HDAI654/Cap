@@ -86,8 +86,14 @@ class LoginView(APIView):
 
         logger.info(f"Login successful for user_id={user.id}")
 
+        user_agent = str(request.headers.get("User-Agent", "unknown"))
+        session = SessionManager.new_session(user_id=user.id, device=user_agent)
+        session.save()
+
         access_token = JWT_Tools.create_access_token(user.id, user.username)
-        refresh_token = JWT_Tools.create_refresh_token(user.id)
+        refresh_token = JWT_Tools.create_refresh_token(
+            user.id, user.username, session.id
+        )
 
         return TokenResponseService.build_response(
             request, access_token, refresh_token, message="User created successfully"

@@ -3,8 +3,8 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework import status
 import fakeredis
-
-from accounts.services.jwt_service import JWT_Tools
+from ...services.jwt_service import JWT_Tools
+from ...services.session_service import Session
 
 User = get_user_model()
 
@@ -34,6 +34,11 @@ def valid_payload():
         "email": "testuser@example.com",
         "password": "StrongPassword123!",
     }
+
+
+@pytest.fixture
+def session(patch_redis):
+    return Session(user_id=1, device="pytest-agent")
 
 
 @pytest.mark.django_db
@@ -135,7 +140,7 @@ def test_signup_internal_error(client, mocker, signup_url, valid_payload):
     """
 
     mocker.patch(
-        "accounts.services.user_services.create_user",
+        "accounts.views.create_user",
         side_effect=Exception("DB failure"),
     )
 
@@ -156,3 +161,27 @@ def test_signup_requires_post_method(client, signup_url):
     """
     response = client.get(signup_url)
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+
+@pytest.mark.django_db
+def test_signup_creates_session(client, session, mocker, signup_url, valid_payload):
+    # Prepare a mock session
+    session.save = mocker.Mock()
+
+    # Patch the SessionManager to return our mock
+    mocker.patch(
+        "accounts.views.SessionManager.new_session",
+        return_value=session,
+    )
+
+    # Call the signup endpoint
+    response = client.post(
+        signup_url,
+        valid_payload,
+        format="json",
+        HTTP_USER_AGENT="pytest-agent",
+    )
+
+    # --- Assertions ---
+    assert response.status_code == 200
+    session.save.assert_called_once()
