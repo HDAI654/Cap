@@ -15,6 +15,7 @@ from .services.user_services import create_user
 from .services.jwt_service import JWT_Tools
 from .services.response_services import TokenResponseService
 from .services.session_service import SessionManager
+from .services.kafka_producer import publish_user_logged_in
 
 
 logger = logging.getLogger(__name__)
@@ -73,31 +74,48 @@ class LoginView(APIView):
     """
     Login endpoint for Web & Android.
     """
-
     def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
+        serializer = SignupSerializer(data=request.data)
 
-        user = authenticate(username=username, password=password)
-        if not user:
-            return Response(
-                {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+        if not serializer.is_valid():
+            logger.warning(f"Signup validation failed: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            data = serializer.validated_data
+
+            username = data.get("username")
+            password = data.get("password")
+
+            user = authenticate(username=username, password=password)
+            if not user:
+                return Response(
+                    {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            logger.info(f"Login successful for user_id={user.id}")
+
+            user_agent = str(request.headers.get("User-Agent", "unknown"))
+            session = SessionManager.new_session(user_id=user.id, device=user_agent)
+            session.save()
+
+            access_token = JWT_Tools.create_access_token(user.id, user.username)
+            refresh_token = JWT_Tools.create_refresh_token(
+                user.id, user.username, session.id
             )
 
-        logger.info(f"Login successful for user_id={user.id}")
+            publish_user_logged_in(user.id, user.username, device=user_agent, session_id=session.id)
 
-        user_agent = str(request.headers.get("User-Agent", "unknown"))
-        session = SessionManager.new_session(user_id=user.id, device=user_agent)
-        session.save()
-
-        access_token = JWT_Tools.create_access_token(user.id, user.username)
-        refresh_token = JWT_Tools.create_refresh_token(
-            user.id, user.username, session.id
-        )
-
-        return TokenResponseService.build_response(
-            request, access_token, refresh_token, message="User created successfully"
-        )
+            return TokenResponseService.build_response(
+                request, access_token, refresh_token, message="User created successfully"
+            )
+    
+        except Exception as e:
+            logger.error(f"Error during login: {e}", exc_info=True)
+            return Response(
+                {"error": "Failed to login"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 @method_decorator(csrf_exempt, name="dispatch")
