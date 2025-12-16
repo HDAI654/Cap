@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from confluent_kafka import Producer
+from django.conf import settings
 
 # ---------------------------------------------------------------------------
 # Logging Configuration
@@ -13,7 +14,7 @@ logging.basicConfig(level=logging.INFO)  # ensure logs are outputted
 # Kafka Configuration
 # ---------------------------------------------------------------------------
 # Bootstrap server is taken from environment variable or default
-KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
+KAFKA_BOOTSTRAP_SERVERS = settings.KAFKA_BOOTSTRAP_SERVERS
 
 # Kafka topic for user-related events
 USER_TOPIC = "user_events"
@@ -92,3 +93,54 @@ def publish_user_created(user_id: int, username: str, email: str):
     except Exception as e:
         # Log any exception that occurs while producing
         logger.error(f"Failed to publish message: {e}")
+
+def publish_user_logged_in(
+    user_id: int,
+    username: str,
+    device: str,
+    session_id: str,
+):
+    """
+    Publishes a 'user_logged_in' event to the Kafka 'user_events' topic.
+    """
+
+    producer = get_producer()
+
+    event = {
+        "event": "user_logged_in",
+        "data": {
+            "id": user_id,
+            "username": username,
+            "device": device,
+            "session_id": session_id,
+        },
+    }
+
+    try:
+        producer.produce(
+            USER_TOPIC,
+            value=json.dumps(event),
+            callback=delivery_report,
+        )
+
+        producer.flush()
+
+        logger.info(
+            "Published user_logged_in event",
+            extra={
+                "user_id": user_id,
+                "session_id": session_id,
+                "device": device,
+            },
+        )
+
+    except Exception as e:
+        logger.error(
+            "Failed to publish user_logged_in event",
+            exc_info=True,
+            extra={
+                "user_id": user_id,
+                "session_id": session_id,
+            },
+        )
+
