@@ -2,7 +2,6 @@ import pytest
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework import status
-import fakeredis
 from ...services.jwt_service import JWT_Tools
 from ...services.session_service import Session
 
@@ -12,19 +11,6 @@ User = get_user_model()
 @pytest.fixture
 def signup_url():
     return reverse("signup")
-
-
-@pytest.fixture(autouse=True)
-def patch_redis(mocker):
-    """
-    Patch redis client used by SessionManager for all tests.
-    """
-    fake = fakeredis.FakeStrictRedis()
-    mocker.patch(
-        "accounts.services.session_service.redis_client",
-        fake,
-    )
-    return fake
 
 
 @pytest.fixture
