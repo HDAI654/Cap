@@ -177,6 +177,19 @@ class RefreshTokenView(APIView):
 
             new_access = JWT_Tools.create_access_token(user.id, user.username)
 
+            # Check need for rotate refresh token
+            need = JWT_Tools.should_rotate_refresh_token(payload["exp"])
+            if need:
+                new_refresh = JWT_Tools.create_refresh_token(
+                    user.id, user.username, session.id
+                )
+                return TokenResponseService.build_response(
+                    request,
+                    new_access,
+                    new_refresh,
+                    message="access_token and refresh_token updated",
+                )
+
             # ANDROID → return new access token in JSON
             if client_type == "android":
                 return Response({"access": new_access})

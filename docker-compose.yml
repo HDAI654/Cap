@@ -21,6 +21,7 @@ services:
       JWT_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 30
+      ROTATE_THRESHOLD_DAYS: 3
 
       REDIS_AUTH_URL: redis://redis-auth:6379/0
     depends_on:

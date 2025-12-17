@@ -57,13 +57,23 @@ class Session:
 
         try:
             deleted_hash = redis_client.delete(key_session)
-            logger.debug("Deleted session hash: key=%s deleted=%s", key_session, bool(deleted_hash))
+            logger.debug(
+                "Deleted session hash: key=%s deleted=%s",
+                key_session,
+                bool(deleted_hash),
+            )
         except Exception as e:
-            logger.error("Failed deleting session hash: key=%s error=%s", key_session, e)
+            logger.error(
+                "Failed deleting session hash: key=%s error=%s", key_session, e
+            )
 
         try:
             removed = redis_client.lrem(key_user_sessions, 0, self.id)
-            logger.debug("Removed session ID from user list: key=%s removed=%s", key_user_sessions, removed)
+            logger.debug(
+                "Removed session ID from user list: key=%s removed=%s",
+                key_user_sessions,
+                removed,
+            )
         except Exception as e:
             logger.error(
                 "Failed removing session from user session list: key=%s session_id=%s error=%s",
@@ -140,7 +150,9 @@ class SessionManager:
             device = data[b"device"].decode()
             created_at = datetime.fromisoformat(data[b"created_at"].decode())
         except Exception as e:
-            logger.error("Failed decoding session hash fields: key=%s error=%s", key_session, e)
+            logger.error(
+                "Failed decoding session hash fields: key=%s error=%s", key_session, e
+            )
             return None
 
         logger.debug("Successfully reconstructed session: session_id=%s", session_id)
@@ -160,7 +172,11 @@ class SessionManager:
         try:
             session_ids = redis_client.lrange(key_user_sessions, 0, -1)
         except Exception as e:
-            logger.error("Failed fetching user session list: key=%s error=%s", key_user_sessions, e)
+            logger.error(
+                "Failed fetching user session list: key=%s error=%s",
+                key_user_sessions,
+                e,
+            )
             return []
 
         sessions = []
