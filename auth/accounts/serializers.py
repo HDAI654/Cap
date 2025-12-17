@@ -10,13 +10,6 @@ class SignupSerializer(serializers.ModelSerializer):
         fields = ["username", "email", "password"]
 
 
-'''    def create(self, validated_data):
-        """
-        Create a new user with a hashed password.
-        """
-        user = User.objects.create_user(
-            username=validated_data["username"],
-            email=validated_data["email"],
-            password=validated_data["password"],
-        )
-        return user'''
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()

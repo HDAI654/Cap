@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from .serializers import SignupSerializer
+from .serializers import SignupSerializer, LoginSerializer
 
 from .services.user_services import create_user
 from .services.jwt_service import JWT_Tools
@@ -75,7 +75,7 @@ class LoginView(APIView):
     Login endpoint for Web & Android.
     """
     def post(self, request):
-        serializer = SignupSerializer(data=request.data)
+        serializer = LoginSerializer(data=request.data)
 
         if not serializer.is_valid():
             logger.warning(f"Signup validation failed: {serializer.errors}")
