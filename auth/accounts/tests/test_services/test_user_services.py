@@ -1,7 +1,8 @@
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from accounts.services.user_services import create_user
 
+User = get_user_model()
 
 @pytest.mark.django_db
 def test_create_user_creates_user(mocker):

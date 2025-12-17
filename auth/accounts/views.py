@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.contrib.auth import get_user_model
 from .serializers import SignupSerializer, LoginSerializer
 
 from .services.user_services import create_user
@@ -17,6 +18,7 @@ from .services.response_services import TokenResponseService
 from .services.session_service import SessionManager
 from .services.kafka_producer import publish_user_logged_in
 
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +127,7 @@ class RefreshTokenView(APIView):
     """
 
     def post(self, request):
-        client_type = request.headers.get("X-Client", "web").lower()
+        client_type = str(request.headers.get("X-Client", "web")).lower()
 
         # ANDROID → refresh token in JSON body
         if client_type == "android":
@@ -141,14 +143,27 @@ class RefreshTokenView(APIView):
 
         try:
             payload = JWT_Tools.decode_token(refresh_token)
-
-            if payload["type"] != "refresh":
+            required_claims = {"sub", "sid", "type"}
+            if not required_claims.issubset(payload) or payload.get("type") != "refresh":
                 return Response(
                     {"error": "Invalid refresh token"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
+            
+            try:
+                user = User.objects.get(id=payload["sub"])
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+                )
 
-            new_access = JWT_Tools.create_access_token(payload["sub"], "unknown")
+            session = SessionManager.get_session(payload["sid"])
+            if not session or session.user_id != user.id:
+                return Response(
+                    {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            new_access = JWT_Tools.create_access_token(user.id, user.username)
 
             # ANDROID → return new access token in JSON
             if client_type == "android":
@@ -162,7 +177,7 @@ class RefreshTokenView(APIView):
                 "access",
                 new_access,
                 httponly=True,
-                secure=True,
+                secure=not settings.DEBUG,
                 samesite="Lax",
                 max_age=max_age,
             )

@@ -23,7 +23,7 @@ class TokenResponseService:
             "access",
             access,
             httponly=True,
-            secure=True,
+            secure=not settings.DEBUG,
             samesite="Lax",
             max_age=access_age,
         )
@@ -31,7 +31,7 @@ class TokenResponseService:
             "refresh",
             refresh,
             httponly=True,
-            secure=True,
+            secure=not settings.DEBUG,
             samesite="Lax",
             max_age=refresh_age,
         )
