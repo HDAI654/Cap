@@ -9,6 +9,7 @@ def disable_kafka(mocker):
         autospec=True,
     )
 
+
 @pytest.fixture(autouse=True)
 def patch_redis(mocker):
     """

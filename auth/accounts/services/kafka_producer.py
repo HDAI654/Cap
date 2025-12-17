@@ -94,6 +94,7 @@ def publish_user_created(user_id: int, username: str, email: str):
         # Log any exception that occurs while producing
         logger.error(f"Failed to publish message: {e}")
 
+
 def publish_user_logged_in(
     user_id: int,
     username: str,
@@ -143,4 +144,3 @@ def publish_user_logged_in(
                 "session_id": session_id,
             },
         )
-

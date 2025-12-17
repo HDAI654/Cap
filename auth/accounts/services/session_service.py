@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from django.conf import settings
 from ..utils.crypto_utils import IDGenerator
@@ -14,12 +14,12 @@ class Session:
         self,
         user_id: int,
         device: str,
-        id: str = None,
+        id: Optional[str] = None,
         created_at: Optional[datetime] = None,
     ):
         self.user_id = user_id
         self.device = device
-        self.created_at = created_at or datetime.utcnow()
+        self.created_at = created_at or datetime.now(timezone.utc)
         self.id = id
 
         if not self.id:
@@ -40,9 +40,8 @@ class Session:
 
         self.delete()
         self._generate_id()
-        self.created_at = datetime.utcnow()
+        self.created_at = datetime.now(timezone.utc)
         self.save()
-
         return self
 
     def delete(self):
@@ -58,23 +57,13 @@ class Session:
 
         try:
             deleted_hash = redis_client.delete(key_session)
-            logger.debug(
-                "Deleted session hash: key=%s deleted=%s",
-                key_session,
-                bool(deleted_hash),
-            )
+            logger.debug("Deleted session hash: key=%s deleted=%s", key_session, bool(deleted_hash))
         except Exception as e:
-            logger.error(
-                "Failed deleting session hash: key=%s error=%s", key_session, e
-            )
+            logger.error("Failed deleting session hash: key=%s error=%s", key_session, e)
 
         try:
             removed = redis_client.lrem(key_user_sessions, 0, self.id)
-            logger.debug(
-                "Removed session ID from user list: key=%s removed=%s",
-                key_user_sessions,
-                removed,
-            )
+            logger.debug("Removed session ID from user list: key=%s removed=%s", key_user_sessions, removed)
         except Exception as e:
             logger.error(
                 "Failed removing session from user session list: key=%s session_id=%s error=%s",
@@ -106,7 +95,6 @@ class Session:
                 },
             )
             redis_client.expire(key_session, ttl_seconds)
-
             logger.debug("Saved session hash and set TTL: key=%s", key_session)
         except Exception as e:
             logger.error("Failed saving session hash: key=%s error=%s", key_session, e)
@@ -114,7 +102,6 @@ class Session:
         try:
             redis_client.rpush(key_user_sessions, self.id)
             redis_client.expire(key_user_sessions, ttl_seconds)
-
             logger.debug(
                 "Pushed session ID to user list and set TTL: key=%s session_id=%s",
                 key_user_sessions,
@@ -136,8 +123,8 @@ class SessionManager:
     @staticmethod
     def get_session(session_id: str) -> Optional[Session]:
         logger.info("Fetching session: session_id=%s", session_id)
-
         key_session = f"session:{session_id}"
+
         try:
             data = redis_client.hgetall(key_session)
         except Exception as e:
@@ -153,9 +140,7 @@ class SessionManager:
             device = data[b"device"].decode()
             created_at = datetime.fromisoformat(data[b"created_at"].decode())
         except Exception as e:
-            logger.error(
-                "Failed decoding session hash fields: key=%s error=%s", key_session, e
-            )
+            logger.error("Failed decoding session hash fields: key=%s error=%s", key_session, e)
             return None
 
         logger.debug("Successfully reconstructed session: session_id=%s", session_id)
@@ -175,11 +160,7 @@ class SessionManager:
         try:
             session_ids = redis_client.lrange(key_user_sessions, 0, -1)
         except Exception as e:
-            logger.error(
-                "Failed fetching user session list: key=%s error=%s",
-                key_user_sessions,
-                e,
-            )
+            logger.error("Failed fetching user session list: key=%s error=%s", key_user_sessions, e)
             return []
 
         sessions = []

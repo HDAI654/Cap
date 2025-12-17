@@ -2,7 +2,6 @@ import pytest
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework import status
-import fakeredis
 
 from accounts.services.jwt_service import JWT_Tools
 
@@ -12,6 +11,7 @@ User = get_user_model()
 @pytest.fixture
 def login_url():
     return reverse("login")
+
 
 @pytest.fixture
 def user(db):
@@ -33,6 +33,7 @@ def valid_payload():
 # ---------------------------------------------------------------------
 # SUCCESS CASES
 # ---------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 def test_login_success_web(client, user, mocker, login_url, valid_payload):
@@ -112,6 +113,7 @@ def test_login_success_android(client, user, mocker, login_url, valid_payload):
 # ---------------------------------------------------------------------
 # ERROR CASES
 # ---------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 def test_login_invalid_credentials(client, mocker, login_url, valid_payload):

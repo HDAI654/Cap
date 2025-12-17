@@ -76,13 +76,14 @@ class LoginView(APIView):
     """
     Login endpoint for Web & Android.
     """
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
 
         if not serializer.is_valid():
             logger.warning(f"Signup validation failed: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         try:
             data = serializer.validated_data
 
@@ -92,7 +93,8 @@ class LoginView(APIView):
             user = authenticate(username=username, password=password)
             if not user:
                 return Response(
-                    {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+                    {"error": "Invalid credentials"},
+                    status=status.HTTP_401_UNAUTHORIZED,
                 )
 
             logger.info(f"Login successful for user_id={user.id}")
@@ -106,12 +108,17 @@ class LoginView(APIView):
                 user.id, user.username, session.id
             )
 
-            publish_user_logged_in(user.id, user.username, device=user_agent, session_id=session.id)
+            publish_user_logged_in(
+                user.id, user.username, device=user_agent, session_id=session.id
+            )
 
             return TokenResponseService.build_response(
-                request, access_token, refresh_token, message="User created successfully"
+                request,
+                access_token,
+                refresh_token,
+                message="User created successfully",
             )
-    
+
         except Exception as e:
             logger.error(f"Error during login: {e}", exc_info=True)
             return Response(
@@ -144,23 +151,28 @@ class RefreshTokenView(APIView):
         try:
             payload = JWT_Tools.decode_token(refresh_token)
             required_claims = {"sub", "sid", "type"}
-            if not required_claims.issubset(payload) or payload.get("type") != "refresh":
+            if (
+                not required_claims.issubset(payload)
+                or payload.get("type") != "refresh"
+            ):
                 return Response(
                     {"error": "Invalid refresh token"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
-            
+
             try:
                 user = User.objects.get(id=payload["sub"])
             except User.DoesNotExist:
                 return Response(
-                    {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+                    {"error": "Invalid credentials"},
+                    status=status.HTTP_401_UNAUTHORIZED,
                 )
 
             session = SessionManager.get_session(payload["sid"])
             if not session or session.user_id != user.id:
                 return Response(
-                    {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+                    {"error": "Invalid credentials"},
+                    status=status.HTTP_401_UNAUTHORIZED,
                 )
 
             new_access = JWT_Tools.create_access_token(user.id, user.username)

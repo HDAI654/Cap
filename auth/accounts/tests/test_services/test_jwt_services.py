@@ -1,6 +1,6 @@
 import pytest
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from ...services.jwt_service import JWT_Tools
 
@@ -28,7 +28,11 @@ def test_create_access_token():
     assert decoded["username"] == username
     assert decoded["type"] == "access"
     assert "exp" in decoded
-    assert datetime.utcfromtimestamp(decoded["exp"]) > datetime.utcnow()
+
+    # Compare exp as UTC-aware datetime
+    exp_dt = datetime.fromtimestamp(decoded["exp"], tz=timezone.utc)
+    now_utc = datetime.now(timezone.utc)
+    assert exp_dt > now_utc
 
 
 @pytest.mark.django_db
@@ -47,7 +51,11 @@ def test_create_refresh_token():
     assert decoded["sid"] == session_id
     assert decoded["type"] == "refresh"
     assert "exp" in decoded
-    assert datetime.utcfromtimestamp(decoded["exp"]) > datetime.utcnow()
+
+    # Compare exp as UTC-aware datetime
+    exp_dt = datetime.fromtimestamp(decoded["exp"], tz=timezone.utc)
+    now_utc = datetime.now(timezone.utc)
+    assert exp_dt > now_utc
 
 
 @pytest.mark.django_db
@@ -71,11 +79,11 @@ def test_invalid_token():
 @pytest.mark.django_db
 def test_expired_token():
     # Create a token that is already expired
-    past_time = datetime.utcnow() - timedelta(minutes=10)
+    past_time = datetime.now(timezone.utc) - timedelta(minutes=10)
     payload = {
         "sub": 1,
         "username": "expired_user",
-        "exp": past_time,
+        "exp": past_time.timestamp(),
         "type": "access",
     }
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
