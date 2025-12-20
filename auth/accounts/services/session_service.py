@@ -30,20 +30,6 @@ class Session:
         self.id = IDGenerator.random_hex(32)
         logger.debug("Generated new session ID: %s", self.id)
 
-    def revoke(self):
-        logger.info(
-            "Revoking session: session_id=%s user_id=%s device=%s",
-            self.id,
-            self.user_id,
-            self.device,
-        )
-
-        self.delete()
-        self._generate_id()
-        self.created_at = datetime.now(timezone.utc)
-        self.save()
-        return self
-
     def delete(self):
         key_session = f"session:{self.id}"
         key_user_sessions = f"user:{self.user_id}"

@@ -65,26 +65,6 @@ def test_delete_session_removes_redis_keys(fake_redis, user_id, device):
 
 
 @pytest.mark.django_db
-def test_revoke_session_regenerates_id_and_saves(fake_redis, user_id, device):
-    session = SessionManager.new_session(user_id, device)
-    session.save()
-    old_id = session.id
-
-    session.revoke()
-    assert old_id != session.id
-
-    # Old session hash should be gone
-    assert not fake_redis.exists(f"session:{old_id}")
-    # New session hash should exist
-    assert fake_redis.exists(f"session:{session.id}")
-    # User session list should contain new id
-    key_user_sessions = f"user:{user_id}"
-    session_list = fake_redis.lrange(key_user_sessions, 0, -1)
-    assert session.id.encode() in session_list
-    assert old_id.encode() not in session_list
-
-
-@pytest.mark.django_db
 def test_get_session_returns_correct_session(user_id, device):
     session = SessionManager.new_session(user_id, device)
     session.save()
