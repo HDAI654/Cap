@@ -280,9 +280,73 @@ class LogoutView(APIView):
         except Exception as e:
             logger.error(f"Logout error: {e}", exc_info=True)
             return Response(
-                {"error": "INTERNAL SERVER ERROR"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "INTERNAL SERVER ERROR"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
 
 @method_decorator(csrf_exempt, name="dispatch")
 class RevokeTokenView(APIView):
-    pass
+    def post(self, request):
+        client_type = str(request.headers.get("X-Client", "web")).lower()
+
+        # ANDROID → refresh token in JSON body
+        if client_type == "android":
+            access_token = request.data.get("access")
+        else:
+            # WEB → refresh token in HttpOnly cookie
+            access_token = request.COOKIES.get("access")
+
+        if not access_token:
+            return Response(
+                {"error": "Access token missing"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            payload = JWT_Tools.decode_token(access_token)
+            required_claims = {"sub", "type"}
+            if not required_claims.issubset(payload) or payload.get("type") != "access":
+                return Response(
+                    {"error": "Invalid access token"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+
+            try:
+                user = User.objects.get(id=payload["sub"])
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "Invalid credentials"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+
+            session_id = int(request.data["sid"])
+            session = SessionManager.get_session(session_id=session_id)
+            if not session or session.user_id != user.id:
+                return Response(
+                    {"error": "Invalid credentials"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+            session.delete()
+            return Response({"success": "Logout successful"}, status=200)
+
+        except ValueError:
+            return Response(
+                {"error": "session id must be integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except jwt.DecodeError:
+            return Response(
+                {"error": "Invalid access token"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        except jwt.ExpiredSignatureError:
+            return Response(
+                {"error": "Access token expired"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as e:
+            logger.error(f"Logout error: {e}", exc_info=True)
+            return Response(
+                {"error": "INTERNAL SERVER ERROR"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
