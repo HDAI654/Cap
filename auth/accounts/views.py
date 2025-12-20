@@ -263,7 +263,15 @@ class LogoutView(APIView):
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
             session.delete()
-            return Response({"success": "Logout successful"}, status=status.HTTP_200_OK)
+            # ANDROID → return success JSON
+            if client_type == "android":
+                return Response({"success": "Logout successful"}, status=200)
+
+            # WEB → return success with cookies deleted
+            response = Response({"success": "Logout successful"}, status=200)
+            response.delete_cookie("refresh")
+            response.delete_cookie("access")
+            return response
 
         except jwt.ExpiredSignatureError:
             return Response(
