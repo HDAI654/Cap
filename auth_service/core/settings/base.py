@@ -18,7 +18,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    # "apps.accounts",
+    "auth_app",
 ]
 
 MIDDLEWARE = [
@@ -32,10 +32,10 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "auth_service.urls"
+ROOT_URLCONF = "core.urls"
 
-WSGI_APPLICATION = "auth_service.wsgi.application"
-ASGI_APPLICATION = "auth_service.asgi.application"
+WSGI_APPLICATION = "core.wsgi.application"
+ASGI_APPLICATION = "core.asgi.application"
 
 DATABASES = {
     "default": dj_database_url.parse(os.getenv("DATABASE_URL", "sqlite:///db.sqlite3"))

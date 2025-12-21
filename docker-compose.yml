@@ -2,7 +2,7 @@ services:
   # Auth Service
   auth-service:
     build:
-      context: ./auth
+      context: ./auth_service
       dockerfile: Dockerfile
     container_name: auth-service
     restart: always
@@ -11,7 +11,8 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@auth-db:5432/authdb
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      DJANGO_SETTINGS_MODULE: auth_service.settings.dev
+      DJANGO_SETTINGS_MODULE: core.settings.dev
+      DJANGO_ALLOWED_HOSTS: localhost
       PYTHONUNBUFFERED: 1
       DJANGO_SUPERUSER_USERNAME: hamed_amiri
       DJANGO_SUPERUSER_EMAIL: admin@example.com
@@ -24,20 +25,6 @@ services:
       ROTATE_THRESHOLD_DAYS: 3
 
       REDIS_AUTH_URL: redis://redis-auth:6379/0
-    depends_on:
-      - auth-db
-      - kafka
-
-  auth-consumer:
-    build:
-      context: ./auth
-      dockerfile: Dockerfile
-    container_name: auth-consumer
-    command: python apps/accounts/services/kafka_consumer.py
-    environment:
-      DJANGO_SETTINGS_MODULE: auth_service.settings.dev
-      DATABASE_URL: postgres://postgres:postgres@auth-db:5432/authdb
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       - auth-db
       - kafka
@@ -85,7 +72,7 @@ services:
     volumes:
       - zookeeper_data:/var/lib/zookeeper/data
 
-  # Kafka broker (classic mode with Zookeeper)
+  # Kafka broker
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     container_name: kafka
