@@ -17,7 +17,7 @@ class UserValidator:
     def validate_email(email: str):
         email = email.strip()
         if not email:
-            raise ValueError("email can't be empty")
+            return None
         if not EMAIL_REGEX.match(email):
             raise ValueError("Invalid email")
         return email
