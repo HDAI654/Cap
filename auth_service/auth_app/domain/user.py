@@ -39,3 +39,12 @@ class UserEntity:
         self.username = UserValidator.validate_username(username)
         self.email = UserValidator.validate_email(email)
         self.password = UserValidator.validate_password(password)
+    
+    @classmethod
+    def from_model(cls, user_model):
+        return cls(
+            id=user_model.id,
+            username=user_model.username,
+            email=user_model.email,
+            password=user_model.password,
+        )

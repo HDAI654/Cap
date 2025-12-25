@@ -2,8 +2,10 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional, List
 from django.conf import settings
+from redis.exceptions import RedisError
 from core.crypto_utils import IDGenerator
 from .redis_client import get_redis_client
+from ....core.exceptions import SessionDoesNotExist, SessionStorageError
 
 logger = logging.getLogger(__name__)
 redis_client = get_redis_client()
@@ -23,35 +25,22 @@ class Session:
         self.id = id
 
         if not self.id:
-            logger.debug("No session ID provided; generating a new one.")
             self._generate_id()
 
     def _generate_id(self):
         self.id = IDGenerator.random_hex(32)
-        logger.debug("Generated new session ID: %s", self.id)
 
     def delete(self):
         key_session = f"session:{self.id}"
         key_user_sessions = f"user:{self.user_id}"
 
-        logger.info(
-            "Deleting session: session_key=%s user_sessions_key=%s session_id=%s",
-            key_session,
-            key_user_sessions,
-            self.id,
-        )
-
         try:
             deleted_hash = redis_client.delete(key_session)
-            logger.debug(
-                "Deleted session hash: key=%s deleted=%s",
-                key_session,
-                bool(deleted_hash),
-            )
-        except Exception as e:
+        except RedisError as e:
             logger.error(
                 "Failed deleting session hash: key=%s error=%s", key_session, e
             )
+            raise SessionStorageError("Failed to delete session")
 
         try:
             removed = redis_client.lrem(key_user_sessions, 0, self.id)
@@ -60,13 +49,14 @@ class Session:
                 key_user_sessions,
                 removed,
             )
-        except Exception as e:
+        except RedisError as e:
             logger.error(
                 "Failed removing session from user session list: key=%s session_id=%s error=%s",
                 key_user_sessions,
                 self.id,
                 e,
             )
+            raise SessionStorageError("Failed to delete session from user list")
 
     def save(self):
         key_session = f"session:{self.id}"
@@ -92,8 +82,9 @@ class Session:
             )
             redis_client.expire(key_session, ttl_seconds)
             logger.debug("Saved session hash and set TTL: key=%s", key_session)
-        except Exception as e:
+        except RedisError as e:
             logger.error("Failed saving session hash: key=%s error=%s", key_session, e)
+            raise SessionStorageError("Failed to save session")
 
         try:
             redis_client.rpush(key_user_sessions, self.id)
@@ -103,13 +94,14 @@ class Session:
                 key_user_sessions,
                 self.id,
             )
-        except Exception as e:
+        except RedisError as e:
             logger.error(
                 "Failed pushing session to user list: key=%s session_id=%s error=%s",
                 key_user_sessions,
                 self.id,
                 e,
             )
+            raise SessionStorageError("Failed to push session to user list")
 
         return self
 
@@ -117,29 +109,27 @@ class Session:
 class SessionManager:
 
     @staticmethod
-    def get_session(session_id: str) -> Optional[Session]:
+    def get_session(session_id: str) -> Session:
         logger.info("Fetching session: session_id=%s", session_id)
         key_session = f"session:{session_id}"
 
-        try:
-            data = redis_client.hgetall(key_session)
-        except Exception as e:
-            logger.error("Failed to fetch session: key=%s error=%s", key_session, e)
-            return None
+        data = redis_client.hgetall(key_session)
 
         if not data:
             logger.debug("Session not found: key=%s", key_session)
-            return None
+            raise SessionDoesNotExist(f"Session not found: key={key_session}")
 
         try:
             user_id = int(data[b"user_id"].decode())
             device = data[b"device"].decode()
             created_at = datetime.fromisoformat(data[b"created_at"].decode())
-        except Exception as e:
+        except (KeyError, ValueError, TypeError) as e:
             logger.error(
                 "Failed decoding session hash fields: key=%s error=%s", key_session, e
             )
-            return None
+            raise SessionStorageError(
+                f"Corrupted session data for session_id={session_id}"
+            )
 
         logger.debug("Successfully reconstructed session: session_id=%s", session_id)
 
@@ -157,13 +147,13 @@ class SessionManager:
 
         try:
             session_ids = redis_client.lrange(key_user_sessions, 0, -1)
-        except Exception as e:
+        except RedisError as e:
             logger.error(
                 "Failed fetching user session list: key=%s error=%s",
                 key_user_sessions,
                 e,
             )
-            return []
+            raise SessionStorageError("Failed fetching user sessions")
 
         sessions = []
         for sid_bytes in session_ids:
@@ -171,14 +161,7 @@ class SessionManager:
             logger.debug("Processing session_id=%s for user_id=%s", sid, user_id)
 
             session = SessionManager.get_session(sid)
-            if session:
-                sessions.append(session)
-            else:
-                logger.warning(
-                    "Session ID referenced in user list but not found: user_id=%s session_id=%s",
-                    user_id,
-                    sid,
-                )
+            sessions.append(session)
 
         logger.info(
             "Completed fetching user sessions: user_id=%s total_sessions=%s",

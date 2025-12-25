@@ -39,3 +39,7 @@ class UserRepo:
         user.email = user_model.email
         
         return user
+    
+    def get_by_id(id: str) -> UserEntity:
+        user_model = User.objects.get(id=id)
+        return UserEntity.from_model(user_model)
