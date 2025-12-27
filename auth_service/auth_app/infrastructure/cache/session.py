@@ -5,7 +5,7 @@ from django.conf import settings
 from redis.exceptions import RedisError
 from core.crypto_utils import IDGenerator
 from .redis_client import get_redis_client
-from ....core.exceptions import SessionDoesNotExist, SessionStorageError
+from core.exceptions import SessionDoesNotExist, SessionStorageError
 
 logger = logging.getLogger(__name__)
 redis_client = get_redis_client()
@@ -36,16 +36,16 @@ class Session:
             self.id,
             self.user_id,
         )
-        pipe = redis_client.pipeline()
-        pipe.multi()
-
         key_session = f"session:{self.id}"
         key_user_sessions = f"user:{self.user_id}"
-
-        pipe.delete(key_session)
-        pipe.srem(key_user_sessions, self.id)
         
         try:
+            pipe = redis_client.pipeline()
+            pipe.multi()
+
+            pipe.delete(key_session)
+            pipe.srem(key_user_sessions, self.id)
+            
             results = pipe.execute()
         except RedisError as e:
             logger.exception(
@@ -71,25 +71,24 @@ class Session:
             self.id,
             self.user_id,
         )
-
-        pipe = redis_client.pipeline()
-        pipe.multi()
-
         key_session = f"session:{self.id}"
         key_user_sessions = f"user:{self.user_id}"
 
-        pipe.hset(
-            key_session,
-            mapping={
-                "user_id": str(self.user_id),
-                "device": self.device,
-                "created_at": self.created_at.isoformat(),
-            },
-        )
-        
-        pipe.sadd(key_user_sessions, self.id)
-
         try:
+            pipe = redis_client.pipeline()
+            pipe.multi()
+
+            pipe.hset(
+                key_session,
+                mapping={
+                    "user_id": str(self.user_id),
+                    "device": self.device,
+                    "created_at": self.created_at.isoformat(),
+                },
+            )
+            
+            pipe.sadd(key_user_sessions, self.id)
+
             results = pipe.execute()
         except RedisError as e:
             logger.exception(
