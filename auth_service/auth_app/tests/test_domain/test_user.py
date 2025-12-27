@@ -1,6 +1,6 @@
 import pytest
 
-from ...domain.user import UserEntity, UserValidator
+from auth_app.domain.user import UserEntity, UserValidator
 
 
 class TestUserValidator:
@@ -122,26 +122,27 @@ class TestUserEntity:
             UserEntity(username="testuser", email="test@example.com", password="")
 
     def test_entity_equality_based_on_id(self):
-        user1 = UserEntity(id=1, username="user1", email="a@test.com", password="pass")
-        user2 = UserEntity(id=1, username="user2", email="b@test.com", password="pass2")
-        user3 = UserEntity(id=2, username="user1", email="a@test.com", password="pass")
+        user1 = UserEntity(id=1, username="user1", email="a@test.com", password="password")
+        user2 = UserEntity(id=1, username="user2", email="b@test.com", password="pass2word")
+        user3 = UserEntity(id=2, username="user1", email="a@test.com", password="password")
 
         assert user1 == user1
+        assert user1 == user2
         assert user1 != user3
         assert user1 is not user2
 
     def test_entity_hash_based_on_id(self):
-        user1 = UserEntity(id=1, username="user1", email="a@test.com", password="pass")
-        user2 = UserEntity(id=1, username="user2", email="b@test.com", password="pass2")
+        user1 = UserEntity(id=1, username="user1", email="a@test.com", password="password")
+        user2 = UserEntity(id=1, username="user2", email="b@test.com", password="pass2word")
 
         assert hash(user1) == hash(user2)
 
     def test_entity_with_none_id_equality(self):
         user1 = UserEntity(
-            id=None, username="user", email="a@test.com", password="pass"
+            id=None, username="user", email="a@test.com", password="password"
         )
         user2 = UserEntity(
-            id=None, username="user", email="a@test.com", password="pass"
+            id=None, username="user", email="a@test.com", password="password"
         )
 
         assert user1 != user2
