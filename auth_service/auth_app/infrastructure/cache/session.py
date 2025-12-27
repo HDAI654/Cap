@@ -43,7 +43,7 @@ class Session:
         key_user_sessions = f"user:{self.user_id}"
 
         pipe.delete(key_session)
-        pipe.lrem(key_user_sessions, 0, self.id)
+        pipe.srem(key_user_sessions, self.id)
         
         try:
             results = pipe.execute()
@@ -77,7 +77,6 @@ class Session:
 
         key_session = f"session:{self.id}"
         key_user_sessions = f"user:{self.user_id}"
-        ttl_seconds = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
 
         pipe.hset(
             key_session,
@@ -87,10 +86,8 @@ class Session:
                 "created_at": self.created_at.isoformat(),
             },
         )
-        pipe.expire(key_session, ttl_seconds)
         
         pipe.sadd(key_user_sessions, self.id)
-        pipe.expire(key_user_sessions, ttl_seconds)
 
         try:
             results = pipe.execute()
@@ -114,39 +111,34 @@ class Session:
         return hash((self.id,))
     
     def __repr__(self):
-        return f"Session(id={self.id}, user_id={self.user_id}, device={self.device}, created_at='{self.created_at}')"
-
-
-
-
-
+        return f"Session(id={self.id}, user_id={self.user_id}, device='{self.device}', created_at='{self.created_at}')"
 
 class SessionManager:
 
     @staticmethod
     def get_session(session_id: str) -> Session:
-        logger.info("Fetching session: session_id=%s", session_id)
+        logger.info("Fetching session session_id=%s", session_id)
         key_session = f"session:{session_id}"
 
         data = redis_client.hgetall(key_session)
 
         if not data:
-            logger.debug("Session not found: key=%s", key_session)
-            raise SessionDoesNotExist(f"Session not found: key={key_session}")
+            logger.debug("Session not found session_id=%s", session_id)
+            raise SessionDoesNotExist("Session not found")
 
         try:
             user_id = int(data[b"user_id"].decode())
             device = data[b"device"].decode()
             created_at = datetime.fromisoformat(data[b"created_at"].decode())
         except (KeyError, ValueError, TypeError) as e:
-            logger.error(
-                "Failed decoding session hash fields: key=%s error=%s", key_session, e
+            logger.exception(
+                "Failed decoding session hash fields session_id=%s", session_id
             )
             raise SessionStorageError(
-                f"Corrupted session data for session_id={session_id}"
-            )
+                "Invalid session data"
+            ) from e
 
-        logger.debug("Successfully reconstructed session: session_id=%s", session_id)
+        logger.info("Successfully reconstructed session session_id=%s", session_id)
 
         return Session(
             id=session_id,
@@ -158,25 +150,34 @@ class SessionManager:
     @staticmethod
     def get_user_sessions(user_id: int) -> List[Session]:
         key_user_sessions = f"user:{user_id}"
-        logger.info("Fetching user sessions: user_id=%s", user_id)
+        logger.info("Fetching user's sessions user_id=%s", user_id)
 
         try:
-            session_ids = redis_client.lrange(key_user_sessions, 0, -1)
+            session_ids_bytes = redis_client.smembers(key_user_sessions)
+            session_ids = {sid.decode() for sid in session_ids_bytes}
         except RedisError as e:
             logger.error(
-                "Failed fetching user session list: key=%s error=%s",
-                key_user_sessions,
-                e,
+                "Failed fetching user's session list user_id=%s",
+                user_id,
             )
-            raise SessionStorageError("Failed fetching user sessions")
+            raise SessionStorageError("Failed fetching user sessions") from e
+
+        if not session_ids:
+            logger.debug("No sessions found for user_id=%s", user_id)
+            return []
 
         sessions = []
-        for sid_bytes in session_ids:
-            sid = sid_bytes.decode()
+        for sid in session_ids:
             logger.debug("Processing session_id=%s for user_id=%s", sid, user_id)
-
-            session = SessionManager.get_session(sid)
-            sessions.append(session)
+            try:
+                session = SessionManager.get_session(sid)
+                sessions.append(session)
+            except SessionDoesNotExist:
+                logger.warning(
+                    "Session in user list but not in storage: session_id=%s user_id=%s",
+                    sid, user_id
+                )
+                continue
 
         logger.info(
             "Completed fetching user sessions: user_id=%s total_sessions=%s",
@@ -184,7 +185,7 @@ class SessionManager:
             len(sessions),
         )
         return sessions
-
+    
     @staticmethod
     def new_session(user_id: int, device: str) -> Session:
         return Session(user_id=user_id, device=device)
