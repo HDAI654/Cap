@@ -31,79 +31,94 @@ class Session:
         self.id = IDGenerator.random_hex(32)
 
     def delete(self):
+        logger.info(
+            "Starting session deletion session_id=%s user_id=%s",
+            self.id,
+            self.user_id,
+        )
+        pipe = redis_client.pipeline()
+        pipe.multi()
+
         key_session = f"session:{self.id}"
         key_user_sessions = f"user:{self.user_id}"
 
+        pipe.delete(key_session)
+        pipe.lrem(key_user_sessions, 0, self.id)
+        
         try:
-            deleted_hash = redis_client.delete(key_session)
+            results = pipe.execute()
         except RedisError as e:
-            logger.error(
-                "Failed deleting session hash: key=%s error=%s", key_session, e
+            logger.exception(
+                "Failed to delete session session_id=%s user_id=%s", self.id, self.user_id,
             )
-            raise SessionStorageError("Failed to delete session")
+            raise SessionStorageError("Failed to delete session") from e
 
-        try:
-            removed = redis_client.lrem(key_user_sessions, 0, self.id)
-            logger.debug(
-                "Removed session ID from user list: key=%s removed=%s",
-                key_user_sessions,
-                removed,
-            )
-        except RedisError as e:
-            logger.error(
-                "Failed removing session from user session list: key=%s session_id=%s error=%s",
-                key_user_sessions,
-                self.id,
-                e,
-            )
-            raise SessionStorageError("Failed to delete session from user list")
+        deleted = results[0]
+        removed = results[1]
+
+        if deleted == 0:
+            logger.warning("Session already deleted or never be exist")
+            
+        if removed == 0:
+            logger.warning("Session not in user set or never be exist")
+        
+        logger.info("Session deleted successfully")
+        return self 
 
     def save(self):
+        logger.info(
+            "Saving session session_id=%s user_id=%s",
+            self.id,
+            self.user_id,
+        )
+
+        pipe = redis_client.pipeline()
+        pipe.multi()
+
         key_session = f"session:{self.id}"
         key_user_sessions = f"user:{self.user_id}"
         ttl_seconds = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
 
-        logger.info(
-            "Saving session: session_id=%s user_id=%s device=%s ttl=%s",
-            self.id,
-            self.user_id,
-            self.device,
-            ttl_seconds,
+        pipe.hset(
+            key_session,
+            mapping={
+                "user_id": str(self.user_id),
+                "device": self.device,
+                "created_at": self.created_at.isoformat(),
+            },
         )
+        pipe.expire(key_session, ttl_seconds)
+        
+        pipe.sadd(key_user_sessions, self.id)
+        pipe.expire(key_user_sessions, ttl_seconds)
 
         try:
-            redis_client.hset(
-                key_session,
-                mapping={
-                    "user_id": str(self.user_id),
-                    "device": self.device,
-                    "created_at": self.created_at.isoformat(),
-                },
-            )
-            redis_client.expire(key_session, ttl_seconds)
-            logger.debug("Saved session hash and set TTL: key=%s", key_session)
+            results = pipe.execute()
         except RedisError as e:
-            logger.error("Failed saving session hash: key=%s error=%s", key_session, e)
-            raise SessionStorageError("Failed to save session")
-
-        try:
-            redis_client.rpush(key_user_sessions, self.id)
-            redis_client.expire(key_user_sessions, ttl_seconds)
-            logger.debug(
-                "Pushed session ID to user list and set TTL: key=%s session_id=%s",
-                key_user_sessions,
-                self.id,
+            logger.exception(
+                "Failed to save session session_id=%s user_id=%s", self.id, self.user_id,
             )
-        except RedisError as e:
-            logger.error(
-                "Failed pushing session to user list: key=%s session_id=%s error=%s",
-                key_user_sessions,
-                self.id,
-                e,
-            )
-            raise SessionStorageError("Failed to push session to user list")
-
+            raise SessionStorageError("Failed to save session") from e
+        
+        logger.info("Session saved successfully")
         return self
+
+    def __eq__(self, other):
+        if not isinstance(other, Session):
+            return False
+        if self.id is None or other.id is None:
+            return False
+        return self.id == other.id
+    
+    def __hash__(self):
+        return hash((self.id,))
+    
+    def __repr__(self):
+        return f"Session(id={self.id}, user_id={self.user_id}, device={self.device}, created_at='{self.created_at}')"
+
+
+
+
 
 
 class SessionManager:
