@@ -4,10 +4,10 @@ set -e
 
 echo "========== Starting CI: running tests... =========="
 cd ..
-cd auth/
+cd auth_service/
 
 # Django settings for pytest-django
-export DJANGO_SETTINGS_MODULE=auth_service.settings.dev
+export DJANGO_SETTINGS_MODULE=core.settings.dev
 
 # Optional but recommended: ensure migrations are valid
 python manage.py makemigrations --check --dry-run

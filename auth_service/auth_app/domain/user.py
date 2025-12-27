@@ -1,7 +1,8 @@
 import re
 
-USERNAME_REGEX = re.compile(r'^[a-zA-Z0-9_.]{3,30}$')
-EMAIL_REGEX = re.compile(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+USERNAME_REGEX = re.compile(r"^[a-zA-Z0-9_.]{3,30}$")
+EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+
 
 class UserValidator:
     @staticmethod
@@ -33,13 +34,14 @@ class UserValidator:
             raise ValueError("Password must be at least 8 characters long")
         return password
 
+
 class UserEntity:
-    def __init__(self, username: str, email: str, password: str, id: int|None = None):
+    def __init__(self, username: str, email: str, password: str, id: int | None = None):
         self.id = id
         self.username = UserValidator.validate_username(username)
         self.email = UserValidator.validate_email(email)
         self.password = UserValidator.validate_password(password)
-    
+
     @classmethod
     def from_model(cls, user_model):
         return cls(

@@ -5,20 +5,19 @@ from ..infrastructure.cache.session import SessionManager
 
 
 class TokenRotationService:
-    def __init__(self, user_repo: UserRepo, session_manager: SessionManager, refresh_token):
+    def __init__(
+        self, user_repo: UserRepo, session_manager: SessionManager, refresh_token
+    ):
         self.user_repo = user_repo
         self.session_manager = session_manager
         self.refresh_token = refresh_token
-    
+
     def execute(self):
         payload = JWT_Tools.decode_token(self.refresh_token)
         required_claims = {"sub", "sid", "type"}
-        if (
-            not required_claims.issubset(payload)
-            or payload.get("type") != "refresh"
-        ):
+        if not required_claims.issubset(payload) or payload.get("type") != "refresh":
             raise InvalidTokenError("Refresh token is invalid or has wrong type")
-        
+
         user = self.user_repo.get_by_id(id=payload["sub"])
 
         session = SessionManager.get_session(payload["sid"])
@@ -34,5 +33,5 @@ class TokenRotationService:
                 user.id, user.username, session.id
             )
             return new_access, new_refresh
-        
+
         return new_access
