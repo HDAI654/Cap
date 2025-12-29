@@ -60,8 +60,10 @@ class TestSessionManager:
     @pytest.fixture(autouse=True)
     def setup_redis(self):
         self.fake_redis = fakeredis.FakeRedis()
-        
-        patcher = patch('auth_app.infrastructure.cache.session.redis_client', self.fake_redis)
+
+        patcher = patch(
+            "auth_app.infrastructure.cache.session.redis_client", self.fake_redis
+        )
         self.mock_redis = patcher.start()
         yield
         patcher.stop()
@@ -75,16 +77,16 @@ class TestSessionManager:
 
     def test_save_session_stores_data_in_redis(self):
         session = Session(user_id=1, device="mobile", id="session123")
-        
+
         session.save()
-        
+
         key_session = "session:session123"
         data = self.fake_redis.hgetall(key_session)
         assert data is not None
         assert data[b"user_id"] == b"1"
         assert data[b"device"] == b"mobile"
         assert b"created_at" in data
-        
+
         key_user_sessions = "user:1"
         session_ids = self.fake_redis.smembers(key_user_sessions)
         assert b"session123" in session_ids
@@ -92,24 +94,25 @@ class TestSessionManager:
     def test_delete_session_removes_from_redis(self):
         session = Session(user_id=1, device="mobile", id="session123")
         session.save()
-        
+
         session.delete()
-        
+
         key_session = "session:session123"
         assert not self.fake_redis.exists(key_session)
-        
+
         key_user_sessions = "user:1"
         session_ids = self.fake_redis.smembers(key_user_sessions)
         assert b"session123" not in session_ids
 
     def test_delete_nonexistent_session_warns_but_does_not_fail(self):
         session = Session(user_id=1, device="mobile", id="nonexistent")
-        
+
         with patch.object(session_file, "logger") as mock_logger:
             session.delete()
-            
-            warning_calls = [call for call in mock_logger.method_calls 
-                           if call[0] == "warning"]
+
+            warning_calls = [
+                call for call in mock_logger.method_calls if call[0] == "warning"
+            ]
             assert len(warning_calls) >= 1
 
     def test_get_session_returns_session_from_redis(self):
@@ -117,18 +120,18 @@ class TestSessionManager:
         user_id = 456
         device = "desktop"
         created_at = datetime.now(timezone.utc).isoformat()
-        
+
         self.fake_redis.hset(
             f"session:{session_id}",
             mapping={
                 "user_id": str(user_id),
                 "device": device,
-                "created_at": created_at
-            }
+                "created_at": created_at,
+            },
         )
-        
+
         session = SessionManager.get_session(session_id)
-        
+
         assert session.id == session_id
         assert session.user_id == user_id
         assert session.device == device
@@ -141,7 +144,7 @@ class TestSessionManager:
     def test_get_session_raises_on_corrupted_data(self):
         session_id = "corrupted"
         self.fake_redis.hset(f"session:{session_id}", "user_id", "not_an_int")
-        
+
         with pytest.raises(SessionStorageError, match="Invalid session data"):
             SessionManager.get_session(session_id)
 
@@ -149,42 +152,42 @@ class TestSessionManager:
         session_id = "incomplete"
         self.fake_redis.hset(f"session:{session_id}", "user_id", "123")
         # Missing device and created_at
-        
+
         with pytest.raises(SessionStorageError, match="Invalid session data"):
             SessionManager.get_session(session_id)
 
     def test_get_user_sessions_returns_all_user_sessions(self):
         user_id = 789
-        
+
         session1_id = "sess1"
         session2_id = "sess2"
-        
+
         self.fake_redis.sadd(f"user:{user_id}", session1_id, session2_id)
-        
+
         self.fake_redis.hset(
             f"session:{session1_id}",
             mapping={
                 "user_id": str(user_id),
                 "device": "mobile",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
         )
-        
+
         self.fake_redis.hset(
             f"session:{session2_id}",
             mapping={
                 "user_id": str(user_id),
                 "device": "desktop",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
         )
-        
+
         sessions = SessionManager.get_user_sessions(user_id)
-        
+
         assert len(sessions) == 2
         session_ids = {s.id for s in sessions}
         assert session_ids == {session1_id, session2_id}
-        
+
         for session in sessions:
             assert session.user_id == user_id
             assert session.device in ["mobile", "desktop"]
@@ -193,26 +196,27 @@ class TestSessionManager:
         user_id = 999
         good_id = "good_session"
         orphaned_id = "orphaned_session"
-        
+
         self.fake_redis.sadd(f"user:{user_id}", good_id, orphaned_id)
-        
+
         self.fake_redis.hset(
             f"session:{good_id}",
             mapping={
                 "user_id": str(user_id),
                 "device": "mobile",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
         )
         # No hash for orphaned_id
-        
+
         with patch.object(session_file, "logger") as mock_logger:
             sessions = SessionManager.get_user_sessions(user_id)
-            
-            warning_calls = [call for call in mock_logger.method_calls 
-                           if call[0] == "warning"]
+
+            warning_calls = [
+                call for call in mock_logger.method_calls if call[0] == "warning"
+            ]
             assert len(warning_calls) == 1
-            
+
             assert len(sessions) == 1
             assert sessions[0].id == good_id
 
@@ -222,58 +226,67 @@ class TestSessionManager:
         assert isinstance(sessions, list)
 
     def test_get_user_sessions_raises_on_redis_error(self):
-        with patch.object(self.fake_redis, "smembers", side_effect=RedisError("Redis error")):
-            with pytest.raises(SessionStorageError, match="Failed fetching user sessions"):
+        with patch.object(
+            self.fake_redis, "smembers", side_effect=RedisError("Redis error")
+        ):
+            with pytest.raises(
+                SessionStorageError, match="Failed fetching user sessions"
+            ):
                 SessionManager.get_user_sessions(1)
 
     def test_save_raises_on_redis_error(self):
         session = Session(user_id=1, device="mobile", id="test")
-        
-        with patch.object(self.fake_redis, "pipeline", side_effect=RedisError("Redis error")):
+
+        with patch.object(
+            self.fake_redis, "pipeline", side_effect=RedisError("Redis error")
+        ):
             with pytest.raises(SessionStorageError, match="Failed to save session"):
                 session.save()
 
     def test_delete_raises_on_redis_error(self):
         session = Session(user_id=1, device="mobile", id="test")
-        
-        with patch.object(self.fake_redis, "pipeline", side_effect=RedisError("Redis error")):
+
+        with patch.object(
+            self.fake_redis, "pipeline", side_effect=RedisError("Redis error")
+        ):
             with pytest.raises(SessionStorageError, match="Failed to delete session"):
                 session.delete()
 
     def test_atomic_save_and_delete_consistency(self):
         session = Session(user_id=1, device="mobile", id="atomic_test")
-        
+
         session.save()
-        
+
         assert self.fake_redis.exists(f"session:{session.id}")
         assert b"atomic_test" in self.fake_redis.smembers("user:1")
-        
+
         session.delete()
-        
+
         assert not self.fake_redis.exists(f"session:{session.id}")
         assert b"atomic_test" not in self.fake_redis.smembers("user:1")
 
     def test_save_is_idempotent(self):
         session = Session(user_id=1, device="mobile", id="idempotent")
-        
+
         session.save()
         first_smembers = self.fake_redis.smembers("user:1")
-        
+
         session.save()  # Second save should not create duplicates
         second_smembers = self.fake_redis.smembers("user:1")
-        
+
         assert first_smembers == second_smembers
         assert len(second_smembers) == 1
 
     def test_delete_is_idempotent(self):
         session = Session(user_id=1, device="mobile", id="idempotent_del")
-        
+
         session.save()
         session.delete()
-        
+
         with patch.object(session_file, "logger") as mock_logger:
             session.delete()  # Second delete should not fail
-            
-            warning_calls = [call for call in mock_logger.method_calls 
-                           if call[0] == "warning"]
+
+            warning_calls = [
+                call for call in mock_logger.method_calls if call[0] == "warning"
+            ]
             assert len(warning_calls) >= 1

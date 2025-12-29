@@ -38,18 +38,20 @@ class Session:
         )
         key_session = f"session:{self.id}"
         key_user_sessions = f"user:{self.user_id}"
-        
+
         try:
             pipe = redis_client.pipeline()
             pipe.multi()
 
             pipe.delete(key_session)
             pipe.srem(key_user_sessions, self.id)
-            
+
             results = pipe.execute()
         except RedisError as e:
             logger.exception(
-                "Failed to delete session session_id=%s user_id=%s", self.id, self.user_id,
+                "Failed to delete session session_id=%s user_id=%s",
+                self.id,
+                self.user_id,
             )
             raise SessionStorageError("Failed to delete session") from e
 
@@ -58,12 +60,12 @@ class Session:
 
         if deleted == 0:
             logger.warning("Session already deleted or never be exist")
-            
+
         if removed == 0:
             logger.warning("Session not in user set or never be exist")
-        
+
         logger.info("Session deleted successfully")
-        return self 
+        return self
 
     def save(self):
         logger.info(
@@ -86,16 +88,18 @@ class Session:
                     "created_at": self.created_at.isoformat(),
                 },
             )
-            
+
             pipe.sadd(key_user_sessions, self.id)
 
             results = pipe.execute()
         except RedisError as e:
             logger.exception(
-                "Failed to save session session_id=%s user_id=%s", self.id, self.user_id,
+                "Failed to save session session_id=%s user_id=%s",
+                self.id,
+                self.user_id,
             )
             raise SessionStorageError("Failed to save session") from e
-        
+
         logger.info("Session saved successfully")
         return self
 
@@ -105,12 +109,13 @@ class Session:
         if self.id is None or other.id is None:
             return False
         return self.id == other.id
-    
+
     def __hash__(self):
         return hash((self.id,))
-    
+
     def __repr__(self):
         return f"Session(id={self.id}, user_id={self.user_id}, device='{self.device}', created_at='{self.created_at}')"
+
 
 class SessionManager:
 
@@ -133,9 +138,7 @@ class SessionManager:
             logger.exception(
                 "Failed decoding session hash fields session_id=%s", session_id
             )
-            raise SessionStorageError(
-                "Invalid session data"
-            ) from e
+            raise SessionStorageError("Invalid session data") from e
 
         logger.info("Successfully reconstructed session session_id=%s", session_id)
 
@@ -174,7 +177,8 @@ class SessionManager:
             except SessionDoesNotExist:
                 logger.warning(
                     "Session in user list but not in storage: session_id=%s user_id=%s",
-                    sid, user_id
+                    sid,
+                    user_id,
                 )
                 continue
 
@@ -184,7 +188,7 @@ class SessionManager:
             len(sessions),
         )
         return sessions
-    
+
     @staticmethod
     def new_session(user_id: int, device: str) -> Session:
         return Session(user_id=user_id, device=device)

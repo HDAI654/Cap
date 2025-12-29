@@ -50,16 +50,16 @@ class UserEntity:
             email=user_model.email,
             password=user_model.password,
         )
-    
+
     def __eq__(self, other):
         if not isinstance(other, UserEntity):
             return False
         if self.id is None or other.id is None:
             return False
         return self.id == other.id
-    
+
     def __hash__(self):
         return hash((self.id,))
-    
+
     def __repr__(self):
         return f"UserEntity(id={self.id}, username='{self.username}')"

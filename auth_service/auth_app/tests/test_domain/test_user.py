@@ -122,9 +122,15 @@ class TestUserEntity:
             UserEntity(username="testuser", email="test@example.com", password="")
 
     def test_entity_equality_based_on_id(self):
-        user1 = UserEntity(id=1, username="user1", email="a@test.com", password="password")
-        user2 = UserEntity(id=1, username="user2", email="b@test.com", password="pass2word")
-        user3 = UserEntity(id=2, username="user1", email="a@test.com", password="password")
+        user1 = UserEntity(
+            id=1, username="user1", email="a@test.com", password="password"
+        )
+        user2 = UserEntity(
+            id=1, username="user2", email="b@test.com", password="pass2word"
+        )
+        user3 = UserEntity(
+            id=2, username="user1", email="a@test.com", password="password"
+        )
 
         assert user1 == user1
         assert user1 == user2
@@ -132,8 +138,12 @@ class TestUserEntity:
         assert user1 is not user2
 
     def test_entity_hash_based_on_id(self):
-        user1 = UserEntity(id=1, username="user1", email="a@test.com", password="password")
-        user2 = UserEntity(id=1, username="user2", email="b@test.com", password="pass2word")
+        user1 = UserEntity(
+            id=1, username="user1", email="a@test.com", password="password"
+        )
+        user2 = UserEntity(
+            id=1, username="user2", email="b@test.com", password="pass2word"
+        )
 
         assert hash(user1) == hash(user2)
 
