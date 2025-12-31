@@ -7,7 +7,7 @@ EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 class UserValidator:
     @staticmethod
     def validate_username(username: str):
-        username = username.strip()
+        username = username.strip().lower()
         if not username:
             raise ValueError("username can't be empty")
         if not USERNAME_REGEX.match(username):
@@ -16,7 +16,7 @@ class UserValidator:
 
     @staticmethod
     def validate_email(email: str):
-        email = email.strip()
+        email = email.strip().lower()
         if not email:
             return None
         if not EMAIL_REGEX.match(email):
@@ -25,7 +25,7 @@ class UserValidator:
 
     @staticmethod
     def validate_password(password: str):
-        password = password.strip()
+        password = password.strip().lower()
         if not password:
             raise ValueError("password can't be empty")
         if " " in password:

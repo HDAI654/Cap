@@ -1,8 +1,8 @@
 import logging
 from django.contrib.auth import get_user_model
-from ..domain.user import UserEntity
+from auth_app.domain.user import UserEntity
 from django.contrib.auth import authenticate
-from ...core.exceptions import AuthenticationFailed, UserAlreadyExists
+from core.exceptions import AuthenticationFailed, UserAlreadyExists
 
 User = get_user_model()
 
@@ -12,11 +12,12 @@ logger = logging.getLogger(__name__)
 class UserRepo:
     @staticmethod
     def create_user(user: UserEntity) -> UserEntity:
-        # Check for existing username
+        if not user.email or not user.email.strip():
+            raise ValueError("email is required to create user")
+        
         if User.objects.filter(username=user.username).exists():
             raise UserAlreadyExists(f"Username '{user.username}' is already taken.")
 
-        # Check for existing email if email is required
         if user.email and User.objects.filter(email=user.email).exists():
             raise UserAlreadyExists(f"Email '{user.email}' is already registered.")
 
@@ -39,6 +40,9 @@ class UserRepo:
 
         return user
 
+    @staticmethod
     def get_by_id(id: str) -> UserEntity:
+        if not str(id).isnumeric():
+            raise ValueError("id must be a number!")
         user_model = User.objects.get(id=id)
         return UserEntity.from_model(user_model)
