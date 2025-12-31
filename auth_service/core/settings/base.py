@@ -76,6 +76,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+AUTH_USER_MODEL = "auth_app.CustomUser"
 
 JWT_SECRET = os.getenv("JWT_SECRET", "supersecretkey")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")

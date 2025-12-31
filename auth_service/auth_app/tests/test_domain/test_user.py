@@ -1,6 +1,6 @@
 import pytest
 
-from auth_app.domain.user import UserEntity, UserValidator
+from auth_service.auth_app.domain.entities.user import UserEntity, UserValidator
 
 
 class TestUserValidator:

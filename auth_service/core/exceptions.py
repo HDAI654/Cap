@@ -10,6 +10,12 @@ class UserAlreadyExists(Exception):
     pass
 
 
+class UserNotFound(Exception):
+    """Raised when trying to get a user that already doesn't exists."""
+
+    pass
+
+
 class InvalidTokenError(Exception):
     """Raised when the token is invalid."""
 

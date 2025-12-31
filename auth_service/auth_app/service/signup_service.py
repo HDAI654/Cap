@@ -1,7 +1,7 @@
 from ..infrastructure.cache.session import SessionManager
 from ..repository.user_repository import UserRepo
 from ..infrastructure.messaging.event_publisher import EventPublisher
-from ..domain.user import UserEntity
+from ..domain.entities.user import UserEntity
 from ..infrastructure.security.jwt_tools import JWT_Tools
 
 
