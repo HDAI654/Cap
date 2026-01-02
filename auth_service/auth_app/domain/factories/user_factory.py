@@ -1,8 +1,8 @@
-from domain.entities.user import UserEntity
-from domain.value_objects.id import ID
-from domain.value_objects.username import Username
-from domain.value_objects.email import Email
-from domain.value_objects.password import Password
+from auth_app.domain.entities.user import UserEntity
+from auth_app.domain.value_objects.id import ID
+from auth_app.domain.value_objects.username import Username
+from auth_app.domain.value_objects.email import Email
+from auth_app.domain.value_objects.password import Password
 
 
 class UserFactory:
@@ -19,7 +19,7 @@ class UserFactory:
         """
 
         return UserEntity(
-            id=user_id or ID(),
+            id=ID(user_id),
             username=Username(username),
             email=Email(email),
             password=Password(hashed_password),

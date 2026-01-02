@@ -7,7 +7,7 @@ class Username:
     def __init__(self, value: str):
         if not isinstance(value, str):
             raise ValueError("Username value must be a non-empty string")
-        value = value.strip().lower()
+        value = value.strip()
         if not value:
             raise ValueError("Username value can't be empty")
         if not USERNAME_REGEX.match(value):
@@ -31,7 +31,7 @@ class Username:
         if isinstance(other, Username):
             return self.value == other.value
         if isinstance(other, str):
-            return self.value == other.strip().lower()
+            return self.value == other.strip()
         return False
 
     def __hash__(self):

@@ -23,7 +23,7 @@ class ID:
         if isinstance(other, ID):
             return self.value == other.value
         if isinstance(other, str):
-            return self.value == other.strip().lower()
+            return self.value == other.strip()
         return False
 
     def __hash__(self):

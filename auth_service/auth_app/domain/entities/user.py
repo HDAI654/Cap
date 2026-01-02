@@ -1,7 +1,7 @@
-from domain.value_objects.id import ID
-from domain.value_objects.username import Username
-from domain.value_objects.email import Email
-from domain.value_objects.password import Password
+from auth_app.domain.value_objects.id import ID
+from auth_app.domain.value_objects.username import Username
+from auth_app.domain.value_objects.email import Email
+from auth_app.domain.value_objects.password import Password
 
 
 class UserEntity:

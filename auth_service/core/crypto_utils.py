@@ -8,5 +8,5 @@ class IDGenerator:
         return secrets.token_hex(length)
 
     @staticmethod
-    def uuid4():
+    def generate():
         return uuid.uuid4().hex

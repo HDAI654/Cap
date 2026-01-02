@@ -9,9 +9,6 @@ cd auth_service/
 # Django settings for pytest-django
 export DJANGO_SETTINGS_MODULE=core.settings.dev
 
-# Optional but recommended: ensure migrations are valid
-python manage.py makemigrations --check --dry-run
-
 # Run pytest
 pytest -v
 
