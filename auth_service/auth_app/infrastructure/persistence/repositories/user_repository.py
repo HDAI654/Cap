@@ -1,15 +1,15 @@
 import logging
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
+from django.db.models import Q
 
-from auth_service.auth_app.domain.entities.user import UserEntity
-from auth_service.auth_app.domain.factories.user_factory import UserFactory
-from auth_service.auth_app.domain.repositories.user_repository import UserRepository
-from auth_service.auth_app.domain.value_objects.id import ID
-from auth_service.auth_app.domain.value_objects.email import Email
-from auth_service.auth_app.domain.value_objects.username import Username
-from auth_service.auth_app.domain.value_objects.password import Password
-from auth_service.core.exceptions import UserAlreadyExists, UserNotFound
+from auth_app.domain.entities.user import UserEntity
+from auth_app.domain.factories.user_factory import UserFactory
+from auth_app.domain.repositories.user_repository import UserRepository
+from auth_app.domain.value_objects.id import ID
+from auth_app.domain.value_objects.email import Email
+from auth_app.domain.value_objects.username import Username
+from auth_app.domain.value_objects.password import Password
+from core.exceptions import UserAlreadyExists, UserNotFound
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -48,6 +48,16 @@ class DjangoUserRepository(UserRepository):
             django_user = User.objects.get(public_id=user.id.value)
         except User.DoesNotExist:
             raise UserNotFound(f"User with ID '{user.id.value}' not found")
+
+        if User.objects.filter(
+            Q(email=user.email.value) & ~Q(public_id=user.id.value)
+        ).exists():
+            raise UserAlreadyExists("This email is being used by another user!")
+
+        if User.objects.filter(
+            Q(username=user.username.value) & ~Q(public_id=user.id.value)
+        ).exists():
+            raise UserAlreadyExists("This username is being used by another user!")
 
         django_user.username = user.username.value
         django_user.email = user.email.value

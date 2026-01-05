@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from domain.entities.user import UserEntity
-from domain.value_objects.id import ID
-from domain.value_objects.email import Email
+from auth_app.domain.entities.user import UserEntity
+from auth_app.domain.value_objects.id import ID
+from auth_app.domain.value_objects.email import Email
 
 
 class UserRepository(ABC):

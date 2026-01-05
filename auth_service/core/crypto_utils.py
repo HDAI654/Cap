@@ -9,4 +9,4 @@ class IDGenerator:
 
     @staticmethod
     def generate():
-        return uuid.uuid4().hex
+        return str(uuid.uuid4())
