@@ -5,7 +5,7 @@ from django.conf import settings
 
 class JWT_Tools:
     @staticmethod
-    def create_access_token(user_id, username):
+    def create_access_token(user_id: str, username: str) -> str:
         exp = datetime.now(timezone.utc) + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
@@ -15,7 +15,7 @@ class JWT_Tools:
         )
 
     @staticmethod
-    def create_refresh_token(user_id, username, session_id):
+    def create_refresh_token(user_id: str, username: str, session_id: str):
         exp = datetime.now(timezone.utc) + timedelta(
             days=settings.REFRESH_TOKEN_EXPIRE_DAYS
         )
