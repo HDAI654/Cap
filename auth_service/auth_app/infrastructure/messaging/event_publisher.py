@@ -1,4 +1,3 @@
-# infrastructure/messaging/event_publisher.py
 from typing import Any, Dict
 from confluent_kafka import Producer
 import json
