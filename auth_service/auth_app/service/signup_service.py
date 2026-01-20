@@ -1,37 +1,44 @@
-from ..infrastructure.cache.session import SessionManager
-from ..repository.user_repository import UserRepo
-from ..infrastructure.messaging.event_publisher import EventPublisher
-from ..domain.entities.user import UserEntity
-from ..infrastructure.security.jwt_tools import JWT_Tools
+from auth_app.domain.ports.session_repository import SessionRepository
+from auth_app.domain.repositories.user_repository import UserRepository
+from auth_app.infrastructure.messaging.event_publisher import EventPublisher
+from auth_app.domain.factories.user_factory import UserFactory
+from auth_app.domain.factories.session_factory import SessionFactory
+from auth_app.infrastructure.security.jwt_tools import JWT_Tools
+from auth_app.infrastructure.security.password_hasher import PasswordHasher
 
 
 class SignupService:
     def __init__(
         self,
-        user_repo: UserRepo,
-        session_manager: SessionManager,
+        user_repo: UserRepository,
+        session_repo: SessionRepository,
         event_publisher: EventPublisher,
+        jwt_tools: JWT_Tools,
+        password_hasher: PasswordHasher,
     ):
         self.user_repo = user_repo
-        self.session_manager = session_manager
+        self.session_repo = session_repo
         self.event_publisher = event_publisher
+        self.jwt_tools = jwt_tools
+        self.password_hasher = password_hasher
 
     def execute(self, username: str, email: str, password: str, device: str):
-        if not email.strip():
-            raise ValueError("email can't be empty")
-        user = UserEntity(username=username, email=email, password=password)
-        user = self.user_repo.create_user(user)
+        hashed_password = self.password_hasher.hash(password)
+        user = UserFactory.create(
+            username=username, email=email, hashed_password=hashed_password
+        )
+        self.user_repo.add(user)
 
         self.event_publisher.publish_user_created(
-            user_id=user.id, username=user.username, email=user.email
+            user_id=user.id.value, username=user.username.value, email=user.email.value
         )
 
-        session = self.session_manager.new_session(user_id=user.id, device=device)
-        session.save()
+        session = SessionFactory.create(user_id=user.id.value, device=device)
+        self.session_repo.add(session)
 
-        access_token = JWT_Tools.create_access_token(user.id, user.username)
+        access_token = JWT_Tools.create_access_token(user.id.value, user.username.value)
         refresh_token = JWT_Tools.create_refresh_token(
-            user.id, user.username, session.id
+            user.id.value, user.username.value, session.id.value
         )
 
         return access_token, refresh_token

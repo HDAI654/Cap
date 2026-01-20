@@ -12,7 +12,7 @@ class UserFactory:
         username: str,
         email: str,
         hashed_password: str,
-        user_id: ID | None = None,
+        user_id: str | None = None,
     ) -> UserEntity:
         """
         Create a new UserEntity.

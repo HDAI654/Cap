@@ -1,13 +1,16 @@
 import json
 import pytest
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 from auth_app.infrastructure.messaging.event_publisher import EventPublisher
+
 
 class TestEventPublisher:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.mock_producer = MagicMock()
-        self.publisher = EventPublisher(self.mock_producer, default_topic="default-topic")
+        self.publisher = EventPublisher(
+            self.mock_producer, default_topic="default-topic"
+        )
 
     def test_publish_sends_payload_to_default_topic(self):
         data = {"foo": "bar"}
@@ -44,23 +47,21 @@ class TestEventPublisher:
 
     def test_publish_user_created_calls_publish_with_correct_data(self):
         self.publisher.publish = MagicMock()
-        self.publisher.publish_user_created(user_id=1, username="alice", email="a@b.com")
+        self.publisher.publish_user_created(
+            user_id=1, username="alice", email="a@b.com"
+        )
 
         self.publisher.publish.assert_called_once_with(
-            "user_created",
-            {"id": 1, "username": "alice", "email": "a@b.com"}
+            "user_created", {"id": 1, "username": "alice", "email": "a@b.com"}
         )
 
     def test_publish_user_logged_in_calls_publish_with_correct_data(self):
         self.publisher.publish = MagicMock()
         self.publisher.publish_user_logged_in(
-            user_id=2,
-            username="bob",
-            device="mobile",
-            session_id="sess123"
+            user_id=2, username="bob", device="mobile", session_id="sess123"
         )
 
         self.publisher.publish.assert_called_once_with(
             "user_logged_in",
-            {"id": 2, "username": "bob", "device": "mobile", "session_id": "sess123"}
+            {"id": 2, "username": "bob", "device": "mobile", "session_id": "sess123"},
         )

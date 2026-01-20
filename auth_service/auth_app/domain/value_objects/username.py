@@ -9,7 +9,7 @@ class Username:
             raise ValueError("Username value must be a non-empty string")
         value = value.strip()
         if not value:
-            raise ValueError("Username value can't be empty")
+            raise ValueError("Device value must be a non-empty string")
         if not USERNAME_REGEX.match(value):
             raise ValueError(
                 "Username value must be 3–30 chars: letters, numbers, _ or ."

@@ -11,6 +11,8 @@ class TestUsername:
     def test_empty_str_username(self):
         with pytest.raises(ValueError):
             Username("")
+            Username(" ")
+            Username("  ")
 
     def test_invalid_username(self):
         with pytest.raises(ValueError):

@@ -15,6 +15,8 @@ class TestID:
     def test_empty_str_id(self):
         with pytest.raises(ValueError):
             ID("")
+            ID(" ")
+            ID("    ")
 
     def test_id_strip(self):
         str_id = "        ID  "

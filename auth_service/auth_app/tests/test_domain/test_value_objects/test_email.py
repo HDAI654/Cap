@@ -11,6 +11,8 @@ class TestEmail:
     def test_empty_str_email(self):
         with pytest.raises(ValueError):
             Email("")
+            Email(" ")
+            Email(" ")
 
     def test_invalid_email(self):
         with pytest.raises(ValueError):

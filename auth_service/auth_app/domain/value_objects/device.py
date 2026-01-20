@@ -1,17 +1,10 @@
-import re
-
-EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
-
-
-class Email:
+class Device:
     def __init__(self, value: str):
         if not isinstance(value, str):
-            raise ValueError("Email value must be a non-empty string")
-        value = value.strip().lower()
+            raise ValueError("Device value must be a non-empty string")
+        value = value.strip()
         if not value:
             raise ValueError("Device value must be a non-empty string")
-        if not EMAIL_REGEX.match(value):
-            raise ValueError("Invalid email !")
 
         self._value = value
 
@@ -23,13 +16,13 @@ class Email:
         return self.value
 
     def __repr__(self):
-        return f"Email('{self.value}')"
+        return f"Device('{self.value}')"
 
     def __eq__(self, other):
-        if isinstance(other, Email):
+        if isinstance(other, Device):
             return self.value == other.value
         if isinstance(other, str):
-            return self.value == other.strip().lower()
+            return self.value == other.strip()
         return False
 
     def __hash__(self):

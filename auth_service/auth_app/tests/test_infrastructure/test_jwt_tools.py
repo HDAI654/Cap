@@ -4,6 +4,7 @@ from django.conf import settings
 import jwt
 from auth_app.infrastructure.security.jwt_tools import JWT_Tools
 
+
 class TestsJWT_Tools:
     @pytest.fixture(autouse=True)
     def jwt_settings(self, settings):
@@ -14,7 +15,9 @@ class TestsJWT_Tools:
         settings.ROTATE_THRESHOLD_DAYS = 2
 
     def test_create_access_token_payload(self):
-        token = JWT_Tools.create_access_token(user_id="TestUserID-mefenifeui-ekfne", username="hamed")
+        token = JWT_Tools.create_access_token(
+            user_id="TestUserID-mefenifeui-ekfne", username="hamed"
+        )
         payload = jwt.decode(
             token,
             settings.JWT_SECRET,
@@ -28,7 +31,9 @@ class TestsJWT_Tools:
 
     def test_create_refresh_token_payload(self):
         token = JWT_Tools.create_refresh_token(
-            user_id="TestUserID-mefenifeui-ekfne", username="hamed", session_id="session-123"
+            user_id="TestUserID-mefenifeui-ekfne",
+            username="hamed",
+            session_id="session-123",
         )
         payload = jwt.decode(
             token,
@@ -43,7 +48,9 @@ class TestsJWT_Tools:
         assert payload["exp"] > datetime.now(timezone.utc).timestamp()
 
     def test_decode_token_returns_payload(self):
-        token = JWT_Tools.create_access_token(user_id="TestUserID-qwidojqid-ekaioneoiefhnh", username="user42")
+        token = JWT_Tools.create_access_token(
+            user_id="TestUserID-qwidojqid-ekaioneoiefhnh", username="user42"
+        )
         payload = JWT_Tools.decode_token(token)
 
         assert payload["sub"] == "TestUserID-qwidojqid-ekaioneoiefhnh"
@@ -94,4 +101,3 @@ class TestsJWT_Tools:
     def test_should_rotate_refresh_token_false(self):
         exp = datetime.now(timezone.utc) + timedelta(days=10)
         assert JWT_Tools.should_rotate_refresh_token(exp.timestamp()) is False
-

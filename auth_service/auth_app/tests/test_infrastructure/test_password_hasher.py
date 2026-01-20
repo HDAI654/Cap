@@ -12,20 +12,17 @@ class TestsPasswordHasher:
         assert hashed != password
         assert isinstance(hashed, str)
 
-
     def test_verify_correct_password_returns_true(self):
         password = "StrongPassword123!"
         hashed = self.hasher.hash(password)
 
         assert self.hasher.verify(password, hashed) is True
 
-
     def test_verify_wrong_password_returns_false(self):
         password = "StrongPassword123!"
         hashed = self.hasher.hash(password)
 
         assert self.hasher.verify("WrongPassword!", hashed) is False
-
 
     def test_hash_same_password_generates_different_hashes(self):
         password = "StrongPassword123!"
