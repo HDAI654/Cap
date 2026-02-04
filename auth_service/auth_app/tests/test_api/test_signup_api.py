@@ -1,4 +1,4 @@
-'''import pytest
+import pytest
 import fakeredis
 from unittest.mock import patch, MagicMock, call
 from django.urls import reverse
@@ -11,24 +11,19 @@ User = get_user_model()
 @pytest.mark.django_db
 class TestSignupEndpoint:
     @pytest.fixture(autouse=True)
-    def setup(self):
-        fake_redis_client = fakeredis.FakeStrictRedis()
-        fake_kafka_producer = MagicMock()
-        def x():
-            return fake_redis_client
-        def y():
-            return fake_kafka_producer
-        patch(
+    def setup(self, mocker):
+        self.fake_redis_client = fakeredis.FakeStrictRedis()
+        self.fake_kafka_producer = MagicMock()
+        
+        mocker.patch(
             "auth_app.infrastructure.cache.redis_client.get_redis_client",
-            x,
+            return_value=self.fake_redis_client
         )
-        patch(
+        mocker.patch(
             "auth_app.infrastructure.messaging.kafka_producer.get_producer",
-            y,
+            return_value=self.fake_kafka_producer
         )
-
-        return fake_redis_client, fake_kafka_producer
-
+        
     @pytest.fixture
     def signup_url(self):
         return reverse("signup")
@@ -75,11 +70,11 @@ class TestSignupEndpoint:
         access_payload = JWT_Tools.decode_token(access_token)
         refresh_payload = JWT_Tools.decode_token(refresh_token)
 
-        assert access_payload["sub"] == user.public_id
+        assert access_payload["sub"] == str(user.public_id)
         assert access_payload["type"] == "access"
         assert access_payload["username"] == user.username
 
-        assert refresh_payload["sub"] == user.public_id
+        assert refresh_payload["sub"] == str(user.public_id)
         assert refresh_payload["type"] == "refresh"
         assert refresh_payload["username"] == user.username
 
@@ -118,13 +113,10 @@ class TestSignupEndpoint:
         access_payload = JWT_Tools.decode_token(response.data["access"])
         refresh_payload = JWT_Tools.decode_token(response.data["refresh"])
 
-        assert access_payload["sub"] == user.public_id
+        assert access_payload["sub"] == str(user.public_id)
         assert access_payload["type"] == "access"
         assert access_payload["username"] == user.username
 
-        assert refresh_payload["sub"] == user.public_id
+        assert refresh_payload["sub"] == str(user.public_id)
         assert refresh_payload["type"] == "refresh"
         assert refresh_payload["username"] == user.username
-
-
-'''
