@@ -8,22 +8,23 @@ from auth_app.infrastructure.security.jwt_tools import JWT_Tools
 
 User = get_user_model()
 
+
 @pytest.mark.django_db
 class TestSignupEndpoint:
     @pytest.fixture(autouse=True)
     def setup(self, mocker):
         self.fake_redis_client = fakeredis.FakeStrictRedis()
         self.fake_kafka_producer = MagicMock()
-        
+
         mocker.patch(
             "auth_app.infrastructure.cache.redis_client.get_redis_client",
-            return_value=self.fake_redis_client
+            return_value=self.fake_redis_client,
         )
         mocker.patch(
             "auth_app.infrastructure.messaging.kafka_producer.get_producer",
-            return_value=self.fake_kafka_producer
+            return_value=self.fake_kafka_producer,
         )
-        
+
     @pytest.fixture
     def signup_url(self):
         return reverse("signup")

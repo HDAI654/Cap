@@ -45,7 +45,9 @@ class SignupView(APIView):
 
         user_repo = DjangoUserRepository()
         session_repo = RedisSessionRepository(redis_client=redis_client)
-        event_publisher = EventPublisher(producer=kafka_producer, default_topic="signup")
+        event_publisher = EventPublisher(
+            producer=kafka_producer, default_topic="signup"
+        )
         jwt_tools = JWT_Tools()
         password_hasher = PasswordHasher()
 
