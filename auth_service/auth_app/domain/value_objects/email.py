@@ -1,6 +1,8 @@
 import re
 
-EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+EMAIL_REGEX = re.compile(
+    r"^[A-Za-z0-9._%+-]{1,64}@" r"[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,}$"
+)
 
 
 class Email:
@@ -10,7 +12,7 @@ class Email:
         value = value.strip().lower()
         if not value:
             raise ValueError("Device value must be a non-empty string")
-        if not EMAIL_REGEX.match(value):
+        if not EMAIL_REGEX.match(value) or len(value) > 254:
             raise ValueError("Invalid email !")
 
         self._value = value
