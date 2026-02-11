@@ -4,7 +4,7 @@ from auth_app.domain.value_objects.username import Username
 
 class TestUsername:
     def test_not_str_username(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             Username(25)
             Username(None)
 

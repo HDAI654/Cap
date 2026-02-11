@@ -4,7 +4,7 @@ from auth_app.domain.value_objects.email import Email
 
 class TestEmail:
     def test_not_str_email(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             Email(25)
             Email(None)
 
@@ -12,11 +12,16 @@ class TestEmail:
         with pytest.raises(ValueError):
             Email("")
             Email(" ")
-            Email(" ")
+            Email("    ")
 
     def test_invalid_email(self):
         with pytest.raises(ValueError):
             Email("ssss12111._com@@sjk")
+            Email("A"*65+"@gmail.com")
+            Email("Aaaaaaa@"+"g"*256+".com")
+            Email("A"*235+"@gmail.com")
+            Email("A@dweuu@gmail.com")
+            Email("MyEmail@10minutemail.com")
 
     def test_email_strip(self):
         str_email = "        testemail@test.com  "

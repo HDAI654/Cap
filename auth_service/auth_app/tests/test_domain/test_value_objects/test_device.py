@@ -4,7 +4,7 @@ from auth_app.domain.value_objects.device import Device
 
 class TestDevice:
     def test_not_str_device(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             Device(25)
             Device(None)
 

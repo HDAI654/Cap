@@ -5,11 +5,14 @@ class DateTime:
     def __init__(self, value: str = None):
         if value is None:
             self._value = datetime.now(timezone.utc)
-        elif not isinstance(value, str) or not value.strip():
-            raise ValueError("DateTime value must be a non-empty string")
         else:
+            if not isinstance(value, str):
+                raise TypeError(f"DateTime must be string, got {type(value).__name__}")
+            value = value.strip()
+            if not value:
+                raise ValueError("DateTime must be a non-empty string")
             try:
-                self._value = datetime.fromisoformat(value.strip())
+                self._value = datetime.fromisoformat(value)
             except:
                 raise ValueError("DateTime value must be yyyy-mm-dd")
 
@@ -31,4 +34,4 @@ class DateTime:
         return False
 
     def __hash__(self):
-        return hash(self.value)
+        return hash((self.value,))

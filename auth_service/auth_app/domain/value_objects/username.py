@@ -1,19 +1,12 @@
-import re
-
-USERNAME_REGEX = re.compile(r"^[a-zA-Z0-9_.]{3,30}$")
-
-
 class Username:
     def __init__(self, value: str):
         if not isinstance(value, str):
-            raise ValueError("Username value must be a non-empty string")
+            raise TypeError(f"Username must be string, got {type(value).__name__}")
         value = value.strip()
         if not value:
-            raise ValueError("Device value must be a non-empty string")
-        if not USERNAME_REGEX.match(value):
-            raise ValueError(
-                "Username value must be 3–30 chars: letters, numbers, _ or ."
-            )
+            raise ValueError("Username must be a non-empty string")
+        if not value.isascii():
+            raise ValueError("Username must contain only ASCII characters")
 
         self._value = value
 
@@ -35,4 +28,4 @@ class Username:
         return False
 
     def __hash__(self):
-        return hash(self.value)
+        return hash((self.value,))

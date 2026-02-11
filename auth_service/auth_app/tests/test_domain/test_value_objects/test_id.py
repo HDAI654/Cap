@@ -9,7 +9,7 @@ class TestID:
         assert id.value != None
 
     def test_not_str_id(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ID(25)
 
     def test_empty_str_id(self):
@@ -23,6 +23,10 @@ class TestID:
         id = ID(str_id)
 
         assert id.value == str_id.strip()
+
+    def test_non_ASCII_id(self):
+        with pytest.raises(ValueError):
+            ID("این یک آیدی است")
 
     def test_eq_id(self):
         id = ID("MyID")

@@ -1,19 +1,29 @@
 import re
 
-EMAIL_REGEX = re.compile(
-    r"^[A-Za-z0-9._%+-]{1,64}@" r"[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,}$"
-)
+EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+BLOCKLIST = {
+    "mailinator.com",
+    "temp-mail.org",
+    "guerrillamail.com",
+    "10minutemail.com",
+    "yopmail.com",
+    "trashmail.com",
+    "throwawaymail.com",
+    "emailondeck.com",
+    "mail.tm",
+    "tempmail.net",
+}
 
 class Email:
     def __init__(self, value: str):
         if not isinstance(value, str):
-            raise ValueError("Email value must be a non-empty string")
+            raise TypeError(f"Email must be string, got {type(value).__name__}")
         value = value.strip().lower()
         if not value:
-            raise ValueError("Device value must be a non-empty string")
-        if not EMAIL_REGEX.match(value) or len(value) > 254:
-            raise ValueError("Invalid email !")
+            raise ValueError("Email must be a non-empty string")
+        if not EMAIL_REGEX.match(value) or len(value) > 254 or value.split("@")[1] in BLOCKLIST:
+            raise ValueError("Invalid Email !")
 
         self._value = value
 
@@ -35,4 +45,4 @@ class Email:
         return False
 
     def __hash__(self):
-        return hash(self.value)
+        return hash((self.value,))

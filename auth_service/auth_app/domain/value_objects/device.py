@@ -1,10 +1,10 @@
 class Device:
     def __init__(self, value: str):
         if not isinstance(value, str):
-            raise ValueError("Device value must be a non-empty string")
+            raise TypeError(f"Device must be string, got {type(value).__name__}")
         value = value.strip()
         if not value:
-            raise ValueError("Device value must be a non-empty string")
+            raise ValueError("Device must be a non-empty string")
 
         self._value = value
 
@@ -26,4 +26,4 @@ class Device:
         return False
 
     def __hash__(self):
-        return hash(self.value)
+        return hash((self.value,))
