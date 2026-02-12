@@ -3,6 +3,9 @@ from datetime import datetime, timedelta, timezone
 from django.conf import settings
 import jwt
 from auth_app.infrastructure.security.jwt_tools import JWT_Tools
+from auth_app.domain.value_objects.id import ID
+from auth_app.domain.value_objects.username import Username
+from auth_app.domain.value_objects.datetime import DateTime
 
 
 class TestsJWT_Tools:
@@ -16,7 +19,7 @@ class TestsJWT_Tools:
 
     def test_create_access_token_payload(self):
         token = JWT_Tools.create_access_token(
-            user_id="TestUserID-mefenifeui-ekfne", username="hamed"
+            user_id=ID("TestUserID-mefenifeui-ekfne"), username=Username("hamed")
         )
         payload = jwt.decode(
             token,
@@ -31,9 +34,9 @@ class TestsJWT_Tools:
 
     def test_create_refresh_token_payload(self):
         token = JWT_Tools.create_refresh_token(
-            user_id="TestUserID-mefenifeui-ekfne",
-            username="hamed",
-            session_id="session-123",
+            user_id=ID("TestUserID-mefenifeui-ekfne"),
+            username=Username("hamed"),
+            session_id=ID("session-123"),
         )
         payload = jwt.decode(
             token,
@@ -49,7 +52,7 @@ class TestsJWT_Tools:
 
     def test_decode_token_returns_payload(self):
         token = JWT_Tools.create_access_token(
-            user_id="TestUserID-qwidojqid-ekaioneoiefhnh", username="user42"
+            user_id=ID("TestUserID-qwidojqid-ekaioneoiefhnh"), username=Username("user42")
         )
         payload = JWT_Tools.decode_token(token)
 
@@ -96,8 +99,8 @@ class TestsJWT_Tools:
 
     def test_should_rotate_refresh_token_true(self):
         exp = datetime.now(timezone.utc) + timedelta(days=1)
-        assert JWT_Tools.should_rotate_refresh_token(exp.timestamp()) is True
+        assert JWT_Tools.should_rotate_refresh_token(DateTime(exp.timestamp())) is True
 
     def test_should_rotate_refresh_token_false(self):
         exp = datetime.now(timezone.utc) + timedelta(days=10)
-        assert JWT_Tools.should_rotate_refresh_token(exp.timestamp()) is False
+        assert JWT_Tools.should_rotate_refresh_token(DateTime(exp.timestamp())) is False

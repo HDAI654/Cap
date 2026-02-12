@@ -14,6 +14,11 @@ class TestPassword:
             Password(" ")
             Password("  ")
     
+    def test_email_strip(self):
+        psw = Password("      TheHashedValueOfPassword    ")
+
+        assert psw.value == "TheHashedValueOfPassword"
+
     def test_eq_password(self):
         password = Password("MyPassword")
         password2 = Password("MyPassword")

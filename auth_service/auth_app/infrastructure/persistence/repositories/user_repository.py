@@ -7,8 +7,6 @@ from auth_app.domain.factories.user_factory import UserFactory
 from auth_app.domain.repositories.user_repository import UserRepository
 from auth_app.domain.value_objects.id import ID
 from auth_app.domain.value_objects.email import Email
-from auth_app.domain.value_objects.username import Username
-from auth_app.domain.value_objects.password import Password
 from core.exceptions import UserAlreadyExists, UserNotFound
 
 User = get_user_model()

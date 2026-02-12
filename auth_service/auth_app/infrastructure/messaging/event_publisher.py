@@ -1,5 +1,9 @@
 from typing import Any, Dict
 from confluent_kafka import Producer
+from auth_app.domain.value_objects.id import ID
+from auth_app.domain.value_objects.username import Username
+from auth_app.domain.value_objects.email import Email
+from auth_app.domain.value_objects.device import Device
 import json
 import logging
 
@@ -36,20 +40,33 @@ class EventPublisher:
         else:
             logger.info("Message delivered to %s [%d]", msg.topic(), msg.partition())
 
-    def publish_user_created(self, user_id: int, username: str, email: str):
+    def publish_user_created(self, user_id: ID, username: Username, email: Email):
         self.publish(
-            "user_created", {"id": user_id, "username": username, "email": email}
+            "user_created", {"id": user_id.value, "username": username.value, "email": email.value}
         )
 
     def publish_user_logged_in(
-        self, user_id: int, username: str, device: str, session_id: str
+        self, user_id: ID, username: Username, device: Device, session_id: ID
     ):
         self.publish(
             "user_logged_in",
             {
-                "id": user_id,
-                "username": username,
-                "device": device,
-                "session_id": session_id,
+                "id": user_id.value,
+                "username": username.value,
+                "device": device.value,
+                "session_id": session_id.value,
+            },
+        )
+    
+    def publish_user_logged_out(
+        self, user_id: ID, username: Username, device: Device, session_id: ID
+    ):
+        self.publish(
+            "user_logged_out",
+            {
+                "id": user_id.value,
+                "username": username.value,
+                "device": device.value,
+                "session_id": session_id.value,
             },
         )

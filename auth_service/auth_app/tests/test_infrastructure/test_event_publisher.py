@@ -2,6 +2,10 @@ import json
 import pytest
 from unittest.mock import MagicMock
 from auth_app.infrastructure.messaging.event_publisher import EventPublisher
+from auth_app.domain.value_objects.id import ID
+from auth_app.domain.value_objects.username import Username
+from auth_app.domain.value_objects.email import Email
+from auth_app.domain.value_objects.device import Device
 
 
 class TestEventPublisher:
@@ -47,21 +51,43 @@ class TestEventPublisher:
 
     def test_publish_user_created_calls_publish_with_correct_data(self):
         self.publisher.publish = MagicMock()
+        user_id = ID()
+        username = Username("alice")
+        email = Email("a@b.com")
         self.publisher.publish_user_created(
-            user_id=1, username="alice", email="a@b.com"
+            user_id=user_id, username=username, email=email
         )
 
         self.publisher.publish.assert_called_once_with(
-            "user_created", {"id": 1, "username": "alice", "email": "a@b.com"}
+            "user_created", {"id": user_id.value, "username": username.value, "email": email.value}
         )
 
     def test_publish_user_logged_in_calls_publish_with_correct_data(self):
         self.publisher.publish = MagicMock()
+        user_id = ID()
+        username = Username("alice")
+        device = Device("mobile")
+        session_id = ID()
         self.publisher.publish_user_logged_in(
-            user_id=2, username="bob", device="mobile", session_id="sess123"
+            user_id=user_id, username=username, device=device, session_id=session_id
         )
 
         self.publisher.publish.assert_called_once_with(
             "user_logged_in",
-            {"id": 2, "username": "bob", "device": "mobile", "session_id": "sess123"},
+            {"id": user_id.value, "username": username.value, "device": device.value, "session_id": session_id.value},
+        )
+
+    def test_publish_user_logged_out_calls_publish_with_correct_data(self):
+        self.publisher.publish = MagicMock()
+        user_id = ID()
+        username = Username("alice")
+        device = Device("mobile")
+        session_id = ID()
+        self.publisher.publish_user_logged_out(
+            user_id=user_id, username=username, device=device, session_id=session_id
+        )
+
+        self.publisher.publish.assert_called_once_with(
+            "user_logged_out",
+            {"id": user_id.value, "username": username.value, "device": device.value, "session_id": session_id.value},
         )

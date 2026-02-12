@@ -30,15 +30,13 @@ class SignupService:
         self.user_repo.add(user)
 
         self.event_publisher.publish_user_created(
-            user_id=user.id.value, username=user.username.value, email=user.email.value
+            user_id=user.id, username=user.username, email=user.email
         )
 
         session = SessionFactory.create(user_id=user.id.value, device=device)
         self.session_repo.add(session)
 
-        access_token = JWT_Tools.create_access_token(user.id.value, user.username.value)
-        refresh_token = JWT_Tools.create_refresh_token(
-            user.id.value, user.username.value, session.id.value
-        )
+        access_token = self.jwt_tools.create_access_token(user.id, user.username)
+        refresh_token = self.jwt_tools.create_refresh_token(user.id, user.username, session.id)
 
         return access_token, refresh_token

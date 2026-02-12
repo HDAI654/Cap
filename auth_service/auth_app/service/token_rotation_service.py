@@ -4,6 +4,7 @@ from auth_app.domain.factories.session_factory import SessionFactory
 from auth_app.domain.repositories.user_repository import UserRepository
 from auth_app.infrastructure.security.jwt_tools import JWT_Tools
 from auth_app.domain.value_objects.id import ID
+from auth_app.domain.value_objects.datetime import DateTime
 
 
 class TokenRotationService:
@@ -22,6 +23,11 @@ class TokenRotationService:
         required_claims = {"sub", "sid", "type"}
         if not required_claims.issubset(payload) or payload.get("type") != "refresh":
             raise InvalidTokenError("Refresh token is invalid or has wrong type")
+        
+        try:
+            exp = float(payload["exp"])
+        except:
+            raise InvalidTokenError("Refresh token is invalid or has wrong data")
 
         user = self.user_repo.get_by_id(id=ID(payload["sub"]))
 
@@ -33,13 +39,13 @@ class TokenRotationService:
         self.session_repo.add(session)
 
         new_access = self.jwt_tools.create_access_token(
-            user.id.value, user.username.value
+            user.id, user.username
         )
 
-        need = self.jwt_tools.should_rotate_refresh_token(payload["exp"])
+        need = self.jwt_tools.should_rotate_refresh_token(DateTime(exp))
         if need:
             new_refresh = self.jwt_tools.create_refresh_token(
-                user.id.value, user.username.value, session.id.value
+                user.id, user.username, session.id
             )
             return new_access, new_refresh
 

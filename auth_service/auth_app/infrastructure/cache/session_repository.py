@@ -106,7 +106,7 @@ class RedisSessionRepository(SessionRepository):
 
         user_id = data[b"user_id"].decode()
         device = data[b"device"].decode()
-        created_at = data[b"created_at"].decode()
+        created_at = float(data[b"created_at"].decode())
 
         logger.info("Successfully reconstructed session session_id=%s", id.value)
 

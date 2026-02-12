@@ -1,6 +1,6 @@
 import pytest
 import fakeredis
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from auth_app.service.login_service import LoginService
 from auth_app.infrastructure.persistence.repositories.user_repository import (
     DjangoUserRepository,

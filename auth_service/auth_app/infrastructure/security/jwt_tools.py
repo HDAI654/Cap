@@ -1,28 +1,33 @@
 from datetime import datetime, timedelta, timezone
 import jwt
+from auth_app.domain.value_objects.id import ID
+from auth_app.domain.value_objects.username import Username
+from auth_app.domain.value_objects.datetime import DateTime
 from django.conf import settings
 
 
 class JWT_Tools:
     @staticmethod
-    def create_access_token(user_id: str, username: str) -> str:
+    def create_access_token(user_id: ID, username: Username) -> str:
         exp = datetime.now(timezone.utc) + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
-        payload = {"sub": user_id, "username": username, "exp": exp, "type": "access"}
+        exp = exp.timestamp()
+        payload = {"sub": user_id.value, "username": username.value, "exp": exp, "type": "access"}
         return jwt.encode(
             payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
         )
 
     @staticmethod
-    def create_refresh_token(user_id: str, username: str, session_id: str):
+    def create_refresh_token(user_id: ID, username: Username, session_id: ID) -> str:
         exp = datetime.now(timezone.utc) + timedelta(
             days=settings.REFRESH_TOKEN_EXPIRE_DAYS
         )
+        exp = exp.timestamp()
         payload = {
-            "sid": session_id,
-            "sub": user_id,
-            "username": username,
+            "sid": session_id.value,
+            "sub": user_id.value,
+            "username": username.value,
             "exp": exp,
             "type": "refresh",
         }
@@ -37,11 +42,10 @@ class JWT_Tools:
         )
 
     @staticmethod
-    def should_rotate_refresh_token(token_expire_time: str) -> bool:
+    def should_rotate_refresh_token(token_expire_time: DateTime) -> bool:
         rotate_threshold = timedelta(days=settings.ROTATE_THRESHOLD_DAYS)
 
-        exp = datetime.fromtimestamp(token_expire_time, tz=timezone.utc)
+        exp = datetime.fromtimestamp(token_expire_time.value, timezone.utc)
         now = datetime.now(timezone.utc)
 
-        # Rotate if the token will expire within the threshold
         return exp - now <= rotate_threshold

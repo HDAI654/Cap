@@ -6,7 +6,7 @@ class TestID:
     def test_none_id(self):
         id = ID()
 
-        assert id.value != None
+        assert id.value != None and isinstance(id.value, str)
 
     def test_not_str_id(self):
         with pytest.raises(TypeError):

@@ -34,15 +34,15 @@ class LoginService:
         self.session_repo.add(session)
 
         self.event_publisher.publish_user_logged_in(
-            user_id=user.id.value,
-            username=user.username.value,
-            device=device,
+            user_id=user.id,
+            username=user.username,
+            device=session.device,
             session_id=session.id,
         )
 
-        access_token = JWT_Tools.create_access_token(user.id.value, user.username.value)
-        refresh_token = JWT_Tools.create_refresh_token(
-            user.id.value, user.username.value, session.id.value
+        access_token = self.jwt_tools.create_access_token(user.id, user.username)
+        refresh_token = self.jwt_tools.create_refresh_token(
+            user.id, user.username, session.id
         )
 
         return access_token, refresh_token

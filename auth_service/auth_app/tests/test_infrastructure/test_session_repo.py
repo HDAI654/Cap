@@ -18,7 +18,7 @@ class TestSessionManager:
     @pytest.fixture()
     def session(self):
         return SessionFactory.create(
-            user_id=ID().value, device="test-device", created_at="2009-06-04"
+            user_id=ID().value, device="test-device", created_at=1245542400.0
         )
 
     @pytest.fixture()
@@ -33,7 +33,7 @@ class TestSessionManager:
         assert data is not None
         assert data[b"user_id"].decode() == session.user_id
         assert data[b"device"].decode() == session.device
-        assert data[b"created_at"].decode() == session.created_at
+        assert float(data[b"created_at"].decode()) == session.created_at
 
         key_user_sessions = f"user:{session.user_id.value}"
         session_ids = self.fake_redis.smembers(key_user_sessions)
@@ -80,11 +80,11 @@ class TestSessionManager:
     def test_get_sessions_by_user_id(self):
         user_id = "user-id"
         session1 = SessionFactory.create(
-            user_id=user_id, device="test-device", created_at="2009-06-04"
+            user_id=user_id, device="test-device", created_at=1245542400.0
         )
 
         session2 = SessionFactory.create(
-            user_id=user_id, device="test-device", created_at="2009-06-04"
+            user_id=user_id, device="test-device", created_at=1245542400.0
         )
         self.repo.add(session1)
         self.repo.add(session2)
@@ -110,7 +110,7 @@ class TestSessionManager:
             mapping={
                 "user_id": user_id,
                 "device": "mobile",
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(timezone.utc).timestamp(),
             },
         )
 

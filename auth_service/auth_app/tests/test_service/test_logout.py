@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import MagicMock
 import jwt
 import fakeredis
 from django.conf import settings
@@ -7,6 +8,8 @@ from auth_app.infrastructure.persistence.repositories.user_repository import (
 )
 from auth_app.infrastructure.cache.session_repository import RedisSessionRepository
 from auth_app.domain.factories.session_factory import SessionFactory
+from auth_app.infrastructure.cache.session_repository import RedisSessionRepository
+from auth_app.infrastructure.messaging.event_publisher import EventPublisher
 from auth_app.infrastructure.security.jwt_tools import JWT_Tools
 from auth_app.domain.factories.user_factory import UserFactory
 from auth_app.service.logout_service import LogoutService
@@ -48,8 +51,10 @@ class TestRotation:
             payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
         )
 
+        producer = MagicMock()
+
         logout_service = LogoutService(
-            user_repo=user_repo, session_repo=session_repo, jwt_tools=JWT_Tools()
+            user_repo=user_repo, session_repo=session_repo, event_publisher=EventPublisher(producer=producer, default_topic="test-topic"), jwt_tools=JWT_Tools()
         )
 
         logout_service.execute(refresh_token=refresh_token)
