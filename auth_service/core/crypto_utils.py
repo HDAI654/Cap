@@ -1,6 +1,9 @@
+from core.exceptions import IDGenerationError
+import logging
 import secrets
 import uuid
 
+logger = logging.getLogger(__name__)
 
 class IDGenerator:
     @staticmethod
@@ -9,4 +12,9 @@ class IDGenerator:
 
     @staticmethod
     def generate():
-        return str(uuid.uuid4())
+        try:
+            return str(uuid.uuid4())
+        except Exception as e:
+            logger.exception("Unexpected error occurred during ID generation")
+            raise IDGenerationError(str(e))
+

@@ -54,11 +54,23 @@ class NoSessionFound(Exception):
 
 class InfrastructureError(Exception):
     """Base class for infrastructure failures."""
+    pass
 
 
 class CacheError(InfrastructureError):
     """Redis / cache failure."""
+    pass
 
 
 class SessionStorageError(CacheError):
     """Failed to read/write/delete session in cache."""
+    pass
+
+
+class IDGenerationError(Exception):
+    """Raised when the IDGenerator.generate() had error"""
+    pass
+
+class ResponseProducerError(Exception):
+    """Raised when the ResponseProducerError.build_response_with_tokens() had error"""
+    pass
