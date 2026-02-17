@@ -74,3 +74,7 @@ class IDGenerationError(Exception):
 class ResponseProducerError(Exception):
     """Raised when the ResponseProducerError.build_response_with_tokens() had error"""
     pass
+
+class PasswordHasherError(Exception):
+    """Raised when the PasswordHasher.hash() or PasswordHasher.verify() had error"""
+    pass

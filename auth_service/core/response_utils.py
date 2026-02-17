@@ -1,10 +1,6 @@
 from rest_framework.response import Response
 from django.conf import settings
 from core.exceptions import ResponseProducerError
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 class ResponseProducer:
     @staticmethod
@@ -51,5 +47,4 @@ class ResponseProducer:
 
             return response
         except Exception as e:
-            logger.exception("Unexpected error occurred during response generation")
-            raise ResponseProducerError(str(e))
+            raise ResponseProducerError(f"Unexpected error occurred during response generation:\n{str(e)}")
