@@ -1,72 +1,47 @@
-from typing import Optional
-
-
-class BaseAppException(Exception):
-    """Base exception for all application errors"""
-
-    def __init__(
-        self, message: str, status_code: int, user_message: Optional[str] = None
-    ):
-        super().__init__(message)
-        self.message = message
-        self.status_code = status_code
-        self.user_message = user_message if user_message else message
-
-    def __str__(self):
-        return self.message
-
-
+########### Basic Exceptions ###########
 class AuthenticationFailed(Exception):
-    """Raised when authentication fails due to invalid credentials."""
+    """Raised when authentication fails due to invalid credentials (401)."""
 
     pass
 
+class BadRequestError(Exception):
+    """Base exception for client-side bad request errors (400)."""
+    pass
 
+
+########### User Exceptions ###########
 class UserAlreadyExists(Exception):
     """Raised when trying to create a user that already exists."""
 
     pass
-
 
 class UserNotFound(Exception):
     """Raised when trying to get a user that already doesn't exists."""
 
     pass
 
+########### Token Exceptions ###########
+class TokenCreationError(Exception):
+    """Raised when token generation fails due to invalid input or system error."""
+    pass
 
-class InvalidTokenError(Exception):
+class InvalidToken(Exception):
     """Raised when the token is invalid."""
 
     pass
 
-
+########### Session Exceptions ###########
 class SessionDoesNotExist(Exception):
     """Raised when the session does not exist."""
 
     pass
 
-
-class NoSessionFound(Exception):
-    """Raised when the no session found."""
-
-    pass
-
-
-class InfrastructureError(Exception):
-    """Base class for infrastructure failures."""
-    pass
-
-
-class CacheError(InfrastructureError):
-    """Redis / cache failure."""
-    pass
-
-
-class SessionStorageError(CacheError):
+class SessionStorageError(Exception):
     """Failed to read/write/delete session in cache."""
     pass
 
 
+########### Utils Exceptions ###########
 class IDGenerationError(Exception):
     """Raised when the IDGenerator.generate() had error"""
     pass

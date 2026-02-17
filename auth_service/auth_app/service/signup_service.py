@@ -1,3 +1,4 @@
+from core.exceptions import BadRequestError
 from auth_app.domain.ports.session_repository import SessionRepository
 from auth_app.domain.repositories.user_repository import UserRepository
 from auth_app.infrastructure.messaging.event_publisher import EventPublisher

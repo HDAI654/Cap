@@ -1,4 +1,4 @@
-from core.exceptions import InvalidTokenError
+from core.exceptions import InvalidToken
 from auth_app.infrastructure.cache.session_repository import SessionRepository
 from auth_app.domain.factories.session_factory import SessionFactory
 from auth_app.domain.repositories.user_repository import UserRepository
@@ -22,18 +22,18 @@ class TokenRotationService:
         payload = self.jwt_tools.decode_token(refresh_token)
         required_claims = {"sub", "sid", "type"}
         if not required_claims.issubset(payload) or payload.get("type") != "refresh":
-            raise InvalidTokenError("Refresh token is invalid or has wrong type")
+            raise InvalidToken("Refresh token is invalid or has wrong type")
 
         try:
             exp = float(payload["exp"])
         except:
-            raise InvalidTokenError("Refresh token is invalid or has wrong data")
+            raise InvalidToken("Refresh token is invalid or has wrong data")
 
         user = self.user_repo.get_by_id(id=ID(payload["sub"]))
 
         session = self.session_repo.get_by_id(ID(payload["sid"]))
         if session.user_id != user.id:
-            raise InvalidTokenError("Refresh token is invalid or has wrong data")
+            raise InvalidToken("Refresh token is invalid or has wrong data")
         self.session_repo.delete(id=session.id, user_id=session.user_id)
         session = SessionFactory.create(user_id=user.id.value, device=device)
         self.session_repo.add(session)

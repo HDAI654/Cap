@@ -2,6 +2,7 @@ import pytest
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
 import jwt
+from core.exceptions import InvalidToken
 from auth_app.infrastructure.security.jwt_tools import JWT_Tools
 from auth_app.domain.value_objects.id import ID
 from auth_app.domain.value_objects.username import Username
@@ -62,7 +63,7 @@ class TestsJWT_Tools:
         assert payload["type"] == "access"
 
     def test_decode_token_invalid_token(self):
-        with pytest.raises(jwt.InvalidTokenError):
+        with pytest.raises(InvalidToken):
             JWT_Tools.decode_token("this.is.not.a.valid.jwt")
 
     def test_decode_token_expired_token(self):
@@ -79,7 +80,7 @@ class TestsJWT_Tools:
             algorithm=settings.JWT_ALGORITHM,
         )
 
-        with pytest.raises(jwt.ExpiredSignatureError):
+        with pytest.raises(InvalidToken):
             JWT_Tools.decode_token(token)
 
     def test_decode_token_invalid_signature(self):
@@ -95,7 +96,7 @@ class TestsJWT_Tools:
             algorithm=settings.JWT_ALGORITHM,
         )
 
-        with pytest.raises(jwt.InvalidSignatureError):
+        with pytest.raises(InvalidToken):
             JWT_Tools.decode_token(token)
 
     def test_should_rotate_refresh_token_true(self):
