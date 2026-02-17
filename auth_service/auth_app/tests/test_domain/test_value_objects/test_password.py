@@ -13,7 +13,7 @@ class TestPassword:
             Password("")
             Password(" ")
             Password("  ")
-    
+
     def test_email_strip(self):
         psw = Password("      TheHashedValueOfPassword    ")
 

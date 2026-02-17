@@ -13,7 +13,12 @@ class JWT_Tools:
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
         exp = exp.timestamp()
-        payload = {"sub": user_id.value, "username": username.value, "exp": exp, "type": "access"}
+        payload = {
+            "sub": user_id.value,
+            "username": username.value,
+            "exp": exp,
+            "type": "access",
+        }
         return jwt.encode(
             payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
         )

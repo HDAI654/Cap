@@ -23,7 +23,7 @@ class TokenRotationService:
         required_claims = {"sub", "sid", "type"}
         if not required_claims.issubset(payload) or payload.get("type") != "refresh":
             raise InvalidTokenError("Refresh token is invalid or has wrong type")
-        
+
         try:
             exp = float(payload["exp"])
         except:
@@ -38,9 +38,7 @@ class TokenRotationService:
         session = SessionFactory.create(user_id=user.id.value, device=device)
         self.session_repo.add(session)
 
-        new_access = self.jwt_tools.create_access_token(
-            user.id, user.username
-        )
+        new_access = self.jwt_tools.create_access_token(user.id, user.username)
 
         need = self.jwt_tools.should_rotate_refresh_token(DateTime(exp))
         if need:

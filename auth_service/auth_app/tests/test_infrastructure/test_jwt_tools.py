@@ -52,7 +52,8 @@ class TestsJWT_Tools:
 
     def test_decode_token_returns_payload(self):
         token = JWT_Tools.create_access_token(
-            user_id=ID("TestUserID-qwidojqid-ekaioneoiefhnh"), username=Username("user42")
+            user_id=ID("TestUserID-qwidojqid-ekaioneoiefhnh"),
+            username=Username("user42"),
         )
         payload = JWT_Tools.decode_token(token)
 

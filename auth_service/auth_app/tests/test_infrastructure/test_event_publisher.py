@@ -59,7 +59,8 @@ class TestEventPublisher:
         )
 
         self.publisher.publish.assert_called_once_with(
-            "user_created", {"id": user_id.value, "username": username.value, "email": email.value}
+            "user_created",
+            {"id": user_id.value, "username": username.value, "email": email.value},
         )
 
     def test_publish_user_logged_in_calls_publish_with_correct_data(self):
@@ -74,7 +75,12 @@ class TestEventPublisher:
 
         self.publisher.publish.assert_called_once_with(
             "user_logged_in",
-            {"id": user_id.value, "username": username.value, "device": device.value, "session_id": session_id.value},
+            {
+                "id": user_id.value,
+                "username": username.value,
+                "device": device.value,
+                "session_id": session_id.value,
+            },
         )
 
     def test_publish_user_logged_out_calls_publish_with_correct_data(self):
@@ -89,5 +95,10 @@ class TestEventPublisher:
 
         self.publisher.publish.assert_called_once_with(
             "user_logged_out",
-            {"id": user_id.value, "username": username.value, "device": device.value, "session_id": session_id.value},
+            {
+                "id": user_id.value,
+                "username": username.value,
+                "device": device.value,
+                "session_id": session_id.value,
+            },
         )

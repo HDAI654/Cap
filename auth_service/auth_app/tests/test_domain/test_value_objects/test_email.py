@@ -17,9 +17,9 @@ class TestEmail:
     def test_invalid_email(self):
         with pytest.raises(ValueError):
             Email("ssss12111._com@@sjk")
-            Email("A"*65+"@gmail.com")
-            Email("Aaaaaaa@"+"g"*256+".com")
-            Email("A"*235+"@gmail.com")
+            Email("A" * 65 + "@gmail.com")
+            Email("Aaaaaaa@" + "g" * 256 + ".com")
+            Email("A" * 235 + "@gmail.com")
             Email("A@dweuu@gmail.com")
 
     def test_blocked_emails(self):

@@ -1,5 +1,6 @@
 from core.crypto_utils import IDGenerator
 
+
 class ID:
     def __init__(self, value: str = None):
         if value is None:
@@ -12,9 +13,9 @@ class ID:
                 raise ValueError("ID must be a non-empty string")
             if not value.isascii():
                 raise ValueError("ID must contain only ASCII characters")
-            
+
             self._value = value
-        
+
     @property
     def value(self) -> str:
         return self._value

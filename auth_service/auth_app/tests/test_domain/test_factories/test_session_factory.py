@@ -44,4 +44,8 @@ class TestUserFactory:
         assert session.id.value == "TestSessionID"
         assert session.user_id.value == "TestUserID"
         assert session.device.value == "test-device"
-        assert isinstance(session.created_at, DateTime) and session.created_at.value and isinstance(session.created_at.value, float)
+        assert (
+            isinstance(session.created_at, DateTime)
+            and session.created_at.value
+            and isinstance(session.created_at.value, float)
+        )

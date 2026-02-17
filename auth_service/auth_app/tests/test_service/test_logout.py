@@ -54,7 +54,12 @@ class TestRotation:
         producer = MagicMock()
 
         logout_service = LogoutService(
-            user_repo=user_repo, session_repo=session_repo, event_publisher=EventPublisher(producer=producer, default_topic="test-topic"), jwt_tools=JWT_Tools()
+            user_repo=user_repo,
+            session_repo=session_repo,
+            event_publisher=EventPublisher(
+                producer=producer, default_topic="test-topic"
+            ),
+            jwt_tools=JWT_Tools(),
         )
 
         logout_service.execute(refresh_token=refresh_token)

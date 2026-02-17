@@ -42,7 +42,8 @@ class EventPublisher:
 
     def publish_user_created(self, user_id: ID, username: Username, email: Email):
         self.publish(
-            "user_created", {"id": user_id.value, "username": username.value, "email": email.value}
+            "user_created",
+            {"id": user_id.value, "username": username.value, "email": email.value},
         )
 
     def publish_user_logged_in(
@@ -57,7 +58,7 @@ class EventPublisher:
                 "session_id": session_id.value,
             },
         )
-    
+
     def publish_user_logged_out(
         self, user_id: ID, username: Username, device: Device, session_id: ID
     ):

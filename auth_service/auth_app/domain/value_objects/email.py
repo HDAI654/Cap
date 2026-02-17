@@ -15,6 +15,7 @@ BLOCKLIST = {
     "tempmail.net",
 }
 
+
 class Email:
     def __init__(self, value: str):
         if not isinstance(value, str):
@@ -22,7 +23,11 @@ class Email:
         value = value.strip().lower()
         if not value:
             raise ValueError("Email must be a non-empty string")
-        if not EMAIL_REGEX.match(value) or len(value) > 254 or value.split("@")[1] in BLOCKLIST:
+        if (
+            not EMAIL_REGEX.match(value)
+            or len(value) > 254
+            or value.split("@")[1] in BLOCKLIST
+        ):
             raise ValueError("Invalid Email !")
 
         self._value = value

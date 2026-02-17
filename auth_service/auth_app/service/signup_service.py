@@ -37,6 +37,8 @@ class SignupService:
         self.session_repo.add(session)
 
         access_token = self.jwt_tools.create_access_token(user.id, user.username)
-        refresh_token = self.jwt_tools.create_refresh_token(user.id, user.username, session.id)
+        refresh_token = self.jwt_tools.create_refresh_token(
+            user.id, user.username, session.id
+        )
 
         return access_token, refresh_token

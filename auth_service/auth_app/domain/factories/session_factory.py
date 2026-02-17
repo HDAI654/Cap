@@ -7,7 +7,11 @@ from auth_app.domain.value_objects.device import Device
 class SessionFactory:
     @staticmethod
     def create(
-        *, user_id: str, device: str, session_id: str = None, created_at: float | int = None
+        *,
+        user_id: str,
+        device: str,
+        session_id: str = None,
+        created_at: float | int = None
     ) -> SessionEntity:
         """
         Create a new SessionEntity.

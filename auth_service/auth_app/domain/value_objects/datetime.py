@@ -8,14 +8,16 @@ class DateTime:
         else:
             value = float(value) if isinstance(value, int) else value
             if not isinstance(value, float):
-                raise TypeError(f"DateTime must be float or integer, got {type(value).__name__}")
+                raise TypeError(
+                    f"DateTime must be float or integer, got {type(value).__name__}"
+                )
             if value <= 0:
                 raise ValueError("DateTime must be positive")
             try:
                 self._value = datetime.fromtimestamp(value, timezone.utc)
             except:
                 raise ValueError("DateTime got invalid value")
-    
+
     @property
     def value(self) -> float:
         return self._value.timestamp()
