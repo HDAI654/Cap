@@ -82,6 +82,8 @@ class TestLogout:
 
         exp = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
+        # create invalid tokens
+        invalid_refresh_token = "invalid-refresh-token"
         incomplete_refresh_token = jwt.encode(
             {
                 "sid": session.id.value, # remove 'sub'
@@ -136,6 +138,28 @@ class TestLogout:
             settings.JWT_SECRET, 
             algorithm=settings.JWT_ALGORITHM
         )
+        nonexistent_user_refresh_token =jwt.encode(
+            {
+                "sid": session.id.value,
+                "sub": "nonexistent",
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        nonexistent_session_refresh_token =jwt.encode(
+            {
+                "sid": "nonexistent",
+                "sub": user.id.value,
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
 
 
         producer = MagicMock()
@@ -151,6 +175,9 @@ class TestLogout:
 
         with pytest.raises(AuthenticationFailed):
             logout_service.execute(
+                refresh_token=invalid_refresh_token
+            )
+            logout_service.execute(
                 refresh_token=incomplete_refresh_token
             )
             logout_service.execute(
@@ -164,6 +191,12 @@ class TestLogout:
             )
             logout_service.execute(
                 refresh_token=expired_refresh_token
+            )
+            logout_service.execute(
+                refresh_token=nonexistent_user_refresh_token
+            )
+            logout_service.execute(
+                refresh_token=nonexistent_session_refresh_token
             )
 
 

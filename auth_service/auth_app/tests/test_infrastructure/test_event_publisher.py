@@ -102,3 +102,19 @@ class TestEventPublisher:
                 "session_id": session_id.value,
             },
         )
+
+    def test_publish_account_deleted_calls_publish_with_correct_data(self):
+        self.publisher.publish = MagicMock()
+        user_id = ID()
+        username = Username("alice")
+        self.publisher.publish_account_deleted(
+            user_id=user_id, username=username
+        )
+
+        self.publisher.publish.assert_called_once_with(
+            "account_deleted",
+            {
+                "id": user_id.value,
+                "username": username.value,
+            },
+        )

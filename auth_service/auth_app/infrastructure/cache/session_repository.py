@@ -87,6 +87,49 @@ class RedisSessionRepository(SessionRepository):
 
         logger.info("Session deleted successfully")
 
+    def delete_all_user_sessions(self, user_id: ID) -> None:
+        logger.info(
+            "Starting deletion of all sessions for user_id=%s",
+            user_id.value,
+        )
+        key_user_sessions = f"user:{user_id.value}"
+
+        try:
+            # Get all session IDs for this user
+            session_ids_bytes = self.redis_client.smembers(key_user_sessions)
+            session_ids = {sid.decode() for sid in session_ids_bytes}
+
+            if not session_ids:
+                logger.debug("No sessions to delete for user_id=%s", user_id.value)
+                return
+
+            # Start pipeline for atomic operation
+            pipe = self.redis_client.pipeline()
+            pipe.multi()
+
+            # Delete all session keys
+            for sid in session_ids:
+                key_session = f"session:{sid}"
+                pipe.delete(key_session)
+
+            # Delete the user's session set
+            pipe.delete(key_user_sessions)
+
+            results = pipe.execute()
+
+            logger.info(
+                "Deleted all sessions for user_id=%s sessions_count=%s",
+                user_id.value,
+                len(session_ids),
+            )
+
+        except RedisError as e:
+            logger.exception(
+                "Failed to delete all sessions for user_id=%s",
+                user_id.value,
+            )
+            raise SessionStorageError("Failed to delete all user sessions") from e
+
     def get_by_id(self, id: ID) -> SessionEntity:
         logger.info("Fetching session session_id=%s", id.value)
         key_session = f"session:{id.value}"

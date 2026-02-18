@@ -6,7 +6,7 @@ from auth_app.infrastructure.security.jwt_tools import JWT_Tools
 from auth_app.domain.value_objects.id import ID
 
 
-class LogoutService:
+class DelAccountService:
     def __init__(
         self,
         user_repo: UserRepository,
@@ -30,14 +30,16 @@ class LogoutService:
 
         try:
             user = self.user_repo.get_by_id(id=ID(payload["sub"]))
-
             session = self.session_repo.get_by_id(ID(payload["sid"]))
+            all_user_sessions = self.session_repo.get_by_user_id(user_id=ID(payload["sub"]))
         except (TypeError, ValueError, UserNotFound, SessionDoesNotExist):
             raise AuthenticationFailed("Refresh token is invalid or has wrong data")
         session_device = session.device
         if session.user_id != user.id:
             raise AuthenticationFailed("Refresh token is invalid or has wrong data")
-        self.session_repo.delete(id=session.id, user_id=session.user_id)
+        self.user_repo.delete(id=user.id)
+        
+        
 
         self.event_publisher.publish_user_logged_out(
             user_id=user.id,

@@ -1,4 +1,4 @@
-from core.exceptions import AuthenticationFailed, InvalidToken
+from core.exceptions import AuthenticationFailed, InvalidToken, UserNotFound, SessionDoesNotExist
 from auth_app.infrastructure.cache.session_repository import SessionRepository
 from auth_app.domain.factories.session_factory import SessionFactory
 from auth_app.domain.repositories.user_repository import UserRepository
@@ -41,7 +41,7 @@ class TokenRotationService:
             self.session_repo.delete(id=session.id, user_id=session.user_id)
             session = SessionFactory.create(user_id=user.id.value, device=device)
             self.session_repo.add(session)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, UserNotFound, SessionDoesNotExist):
             raise AuthenticationFailed("Refresh token is invalid or has wrong data")
 
         new_access = self.jwt_tools.create_access_token(user.id, user.username)

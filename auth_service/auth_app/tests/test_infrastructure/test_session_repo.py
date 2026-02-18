@@ -182,3 +182,140 @@ class TestSessionManager:
 
         assert first_smembers == second_smembers
         assert len(second_smembers) == 1
+
+    def test_delete_all_user_sessions_deletes_all_sessions(self, user_id):
+        """Test that all sessions for a user are deleted."""
+        # Create multiple sessions for the same user
+        session1 = SessionFactory.create(
+            user_id=user_id.value, device="mobile", created_at=1245542400.0
+        )
+        session2 = SessionFactory.create(
+            user_id=user_id.value, device="tablet", created_at=1245542400.0
+        )
+        session3 = SessionFactory.create(
+            user_id=user_id.value, device="desktop", created_at=1245542400.0
+        )
+        
+        self.repo.add(session1)
+        self.repo.add(session2)
+        self.repo.add(session3)
+        
+        # Verify sessions exist
+        assert self.fake_redis.exists(f"session:{session1.id.value}")
+        assert self.fake_redis.exists(f"session:{session2.id.value}")
+        assert self.fake_redis.exists(f"session:{session3.id.value}")
+        assert self.fake_redis.scard(f"user:{user_id.value}") == 3
+        
+        # Delete all sessions
+        self.repo.delete_all_user_sessions(user_id)
+        
+        # Verify all sessions are deleted
+        assert not self.fake_redis.exists(f"session:{session1.id.value}")
+        assert not self.fake_redis.exists(f"session:{session2.id.value}")
+        assert not self.fake_redis.exists(f"session:{session3.id.value}")
+        assert not self.fake_redis.exists(f"user:{user_id.value}")
+
+    def test_delete_all_user_sessions_with_no_sessions(self, user_id):
+        """Test deleting all sessions when user has no sessions."""
+        # Verify no sessions initially
+        assert self.fake_redis.scard(f"user:{user_id.value}") == 0
+        
+        # Should not raise any exception
+        self.repo.delete_all_user_sessions(user_id)
+        
+        # Verify still no sessions
+        assert self.fake_redis.scard(f"user:{user_id.value}") == 0
+
+    def test_delete_all_user_sessions_with_orphaned_sessions(self, user_id):
+        """Test deleting all sessions when some sessions are missing."""
+        # Create a session that exists
+        good_session = SessionFactory.create(
+            user_id=user_id.value, device="mobile", created_at=1245542400.0
+        )
+        self.repo.add(good_session)
+        
+        # Manually add orphaned session ID to user set
+        orphaned_id = "orphaned-session-id"
+        self.fake_redis.sadd(f"user:{user_id.value}", orphaned_id)
+        
+        # Verify state
+        assert self.fake_redis.exists(f"session:{good_session.id.value}")
+        assert not self.fake_redis.exists(f"session:{orphaned_id}")
+        assert self.fake_redis.scard(f"user:{user_id.value}") == 2
+        
+        # Delete all sessions
+        self.repo.delete_all_user_sessions(user_id)
+        
+        # Verify both session and orphaned ID are gone from user set
+        assert not self.fake_redis.exists(f"user:{user_id.value}")
+        
+        # Verify good session is deleted
+        assert not self.fake_redis.exists(f"session:{good_session.id.value}")
+
+    def test_delete_all_user_sessions_raises_on_redis_error(self, user_id):
+        """Test that SessionStorageError is raised on Redis error."""
+        with patch.object(
+            self.fake_redis, "smembers", side_effect=RedisError("Redis error")
+        ):
+            with pytest.raises(SessionStorageError, match="Failed to delete all user sessions"):
+                self.repo.delete_all_user_sessions(user_id)
+
+    def test_delete_all_user_sessions_atomic_consistency(self, user_id):
+        """Test that operation is atomic - all or nothing."""
+        # Create sessions
+        session1 = SessionFactory.create(
+            user_id=user_id.value, device="mobile", created_at=1245542400.0
+        )
+        session2 = SessionFactory.create(
+            user_id=user_id.value, device="tablet", created_at=1245542400.0
+        )
+        
+        self.repo.add(session1)
+        self.repo.add(session2)
+        
+        # Mock pipeline to fail after deleting some sessions
+        original_pipeline = self.fake_redis.pipeline
+        
+        def failing_pipeline():
+            pipe = original_pipeline()
+            original_execute = pipe.execute
+            
+            def execute_with_failure():
+                # First delete operations might succeed
+                result = original_execute()
+                # Then raise error
+                raise RedisError("Simulated failure")
+            
+            pipe.execute = execute_with_failure
+            return pipe
+        
+        with patch.object(self.fake_redis, "pipeline", side_effect=failing_pipeline):
+            with pytest.raises(SessionStorageError):
+                self.repo.delete_all_user_sessions(user_id)
+
+    def test_delete_all_user_sessions_multiple_users_isolated(self):
+        """Test that deleting sessions for one user doesn't affect another."""
+        user1 = ID()
+        user2 = ID()
+        
+        # Create sessions for both users
+        session_user1 = SessionFactory.create(
+            user_id=user1.value, device="mobile", created_at=1245542400.0
+        )
+        session_user2 = SessionFactory.create(
+            user_id=user2.value, device="tablet", created_at=1245542400.0
+        )
+        
+        self.repo.add(session_user1)
+        self.repo.add(session_user2)
+        
+        # Delete only user1's sessions
+        self.repo.delete_all_user_sessions(user1)
+        
+        # Verify user1's sessions are gone
+        assert not self.fake_redis.exists(f"session:{session_user1.id.value}")
+        assert not self.fake_redis.exists(f"user:{user1.value}")
+        
+        # Verify user2's sessions remain
+        assert self.fake_redis.exists(f"session:{session_user2.id.value}")
+        assert self.fake_redis.scard(f"user:{user2.value}") == 1

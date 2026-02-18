@@ -107,6 +107,7 @@ class TestRotation:
         session_repo.add(session)
         
         # create invalid tokens
+        invalid_refresh_token = "invalid-refresh-token"
         incomplete_refresh_token = jwt.encode(
             {
                 "sid": session.id.value, # remove 'sub'
@@ -172,12 +173,39 @@ class TestRotation:
             settings.JWT_SECRET, 
             algorithm=settings.JWT_ALGORITHM
         )
-        
+        nonexistent_user_refresh_token =jwt.encode(
+            {
+                "sid": session.id.value,
+                "sub": "nonexistent",
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        nonexistent_session_refresh_token =jwt.encode(
+            {
+                "sid": "nonexistent",
+                "sub": user.id.value,
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+
+
+
         rotation_service = TokenRotationService(
             user_repo=user_repo, session_repo=session_repo, jwt_tools=JWT_Tools()
         )
         
         with pytest.raises(AuthenticationFailed):
+            rotation_service.execute(
+                refresh_token=invalid_refresh_token, device="test-device"
+            )
             rotation_service.execute(
                 refresh_token=incomplete_refresh_token, device="test-device"
             )
@@ -195,4 +223,10 @@ class TestRotation:
             )
             rotation_service.execute(
                 refresh_token=expired_refresh_token, device="test-device"
+            )
+            rotation_service.execute(
+                refresh_token=nonexistent_user_refresh_token
+            )
+            rotation_service.execute(
+                refresh_token=nonexistent_session_refresh_token
             )
