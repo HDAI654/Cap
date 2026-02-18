@@ -5,7 +5,7 @@ from auth_app.infrastructure.messaging.event_publisher import EventPublisher
 from auth_app.domain.value_objects.email import Email
 from auth_app.infrastructure.security.jwt_tools import JWT_Tools
 from auth_app.infrastructure.security.password_hasher import PasswordHasher
-from core.exceptions import AuthenticationFailed
+from core.exceptions import AuthenticationFailed, UserNotFound, BadRequestError
 
 
 class LoginService:
@@ -24,11 +24,16 @@ class LoginService:
         self.password_hasher = password_hasher
 
     def execute(self, username: str, email: str, password: str, device: str):
-        user = self.user_repo.get_by_email(email=Email(email))
+        try:
+            user = self.user_repo.get_by_email(email=Email(email))
+        except UserNotFound:
+            raise AuthenticationFailed("Invalid credentials")
+        except (TypeError, ValueError) as e:
+            raise BadRequestError(str(e))
         if not self.password_hasher.verify(password, user.password.value):
-            raise AuthenticationFailed("The password is incorrect")
+            raise AuthenticationFailed("Invalid credentials")
         if user.username != username:
-            raise AuthenticationFailed("This username is not for this user")
+            raise AuthenticationFailed("Invalid credentials")
 
         session = SessionFactory.create(user_id=user.id.value, device=device)
         self.session_repo.add(session)

@@ -1,5 +1,5 @@
 import pytest
-import unittest
+from core.exceptions import AuthenticationFailed
 import jwt
 import fakeredis
 from datetime import datetime, timedelta, timezone
@@ -36,7 +36,7 @@ class TestRotation:
 
         session_repo = RedisSessionRepository(redis_client=self.fake_redis)
 
-        exp = datetime.now(timezone.utc) + timedelta(days=30)
+        exp = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
         session = SessionFactory.create(user_id=user.id.value, device="test-device")
         session_repo.add(session)
@@ -59,7 +59,7 @@ class TestRotation:
         new_access, new_refresh = rotation_service.execute(
             refresh_token=refresh_token, device="test-device"
         )
-        assert new_access
+
         assert new_refresh is None
         assert isinstance(new_access, str)
 
@@ -69,7 +69,7 @@ class TestRotation:
 
         session_repo = RedisSessionRepository(redis_client=self.fake_redis)
 
-        exp = datetime.now(timezone.utc) + timedelta(minutes=1)
+        exp = datetime.now(timezone.utc) + timedelta(minutes=41)
 
         session = SessionFactory.create(user_id=user.id.value, device="test-device")
         session_repo.add(session)
@@ -92,5 +92,107 @@ class TestRotation:
         new_access, new_refresh = rotation_service.execute(
             refresh_token=refresh_token, device="test-device"
         )
-        assert new_access and new_refresh
+
         assert isinstance(new_access, str) and isinstance(new_refresh, str)
+
+    def test_rotation_with_invalid_token(self, user):
+        user_repo = DjangoUserRepository()
+        user_repo.add(user)
+
+        session_repo = RedisSessionRepository(redis_client=self.fake_redis)
+
+        exp = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+        session = SessionFactory.create(user_id=user.id.value, device="test-device")
+        session_repo.add(session)
+        
+        # create invalid tokens
+        incomplete_refresh_token = jwt.encode(
+            {
+                "sid": session.id.value, # remove 'sub'
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            }, 
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        invalid_type_refresh_token = jwt.encode(
+            {
+                "sid": session.id.value,
+                "sub": user.id.value,
+                "username": user.username.value,
+                "exp": exp,
+                "type": "access",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        invalid_exp_refresh_token = jwt.encode(
+            {
+                "sid": session.id.value,
+                "sub": user.id.value,
+                "username": user.username.value,
+                "exp": "InvalidExpTime :)",
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        invalid_data_refresh_token = jwt.encode(
+            {
+                "sid": "شناسه اشتباه",
+                "sub": user.id.value,
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        invalid_data2_refresh_token = jwt.encode(
+            {
+                "sid": session.id.value,
+                "sub": "شناسه اشتباه",
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        expired_refresh_token =jwt.encode(
+            {
+                "sid": session.id.value,
+                "sub": user.id.value,
+                "username": user.username.value,
+                "exp": datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS-1),
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        
+        rotation_service = TokenRotationService(
+            user_repo=user_repo, session_repo=session_repo, jwt_tools=JWT_Tools()
+        )
+        
+        with pytest.raises(AuthenticationFailed):
+            rotation_service.execute(
+                refresh_token=incomplete_refresh_token, device="test-device"
+            )
+            rotation_service.execute(
+                refresh_token=invalid_type_refresh_token, device="test-device"
+            )
+            rotation_service.execute(
+                refresh_token=invalid_exp_refresh_token, device="test-device"
+            )
+            rotation_service.execute(
+                refresh_token=invalid_data_refresh_token, device="test-device"
+            )
+            rotation_service.execute(
+                refresh_token=invalid_data2_refresh_token, device="test-device"
+            )
+            rotation_service.execute(
+                refresh_token=expired_refresh_token, device="test-device"
+            )

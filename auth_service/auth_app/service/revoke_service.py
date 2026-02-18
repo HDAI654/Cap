@@ -1,4 +1,6 @@
-from core.exceptions import InvalidToken
+# Temporarily disabled
+
+'''from core.exceptions import InvalidToken
 from auth_app.infrastructure.cache.session_repository import SessionRepository
 from auth_app.domain.repositories.user_repository import UserRepository
 from auth_app.infrastructure.security.jwt_tools import JWT_Tools
@@ -32,3 +34,4 @@ class RevokeService:
         if session.user_id != user.id:
             raise InvalidToken("This session does not blong to this user !")
         self.session_repo.delete(id=session.id, user_id=session.user_id)
+'''

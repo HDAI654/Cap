@@ -1,4 +1,5 @@
 import pytest
+from core.exceptions import AuthenticationFailed
 from unittest.mock import MagicMock
 import jwt
 import fakeredis
@@ -20,10 +21,10 @@ User = get_user_model()
 
 
 @pytest.mark.django_db
-class TestRotation:
+class TestLogout:
     fake_redis = fakeredis.FakeRedis()
 
-    def test_rotation_success(self):
+    def test_logout_success(self):
         user = UserFactory.create(
             username="TestUser",
             email="Test@test.com",
@@ -38,7 +39,7 @@ class TestRotation:
         session = SessionFactory.create(user_id=user.id.value, device="test-device")
         session_repo.add(session)
 
-        exp = datetime.now(timezone.utc) + timedelta(days=30)
+        exp = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
         payload = {
             "sid": session.id.value,
@@ -63,3 +64,106 @@ class TestRotation:
         )
 
         logout_service.execute(refresh_token=refresh_token)
+
+    def test_logout_with_invalid_token(self):
+        user = UserFactory.create(
+            username="TestUser",
+            email="Test@test.com",
+            hashed_password="test-password1558",
+        )
+
+        user_repo = DjangoUserRepository()
+        user_repo.add(user)
+
+        session_repo = RedisSessionRepository(redis_client=self.fake_redis)
+
+        session = SessionFactory.create(user_id=user.id.value, device="test-device")
+        session_repo.add(session)
+
+        exp = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+        incomplete_refresh_token = jwt.encode(
+            {
+                "sid": session.id.value, # remove 'sub'
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            }, 
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        invalid_type_refresh_token = jwt.encode(
+            {
+                "sid": session.id.value,
+                "sub": user.id.value,
+                "username": user.username.value,
+                "exp": exp,
+                "type": "access",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        invalid_data_refresh_token = jwt.encode(
+            {
+                "sid": "شناسه اشتباه",
+                "sub": user.id.value,
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        invalid_data2_refresh_token = jwt.encode(
+            {
+                "sid": session.id.value,
+                "sub": "شناسه اشتباه",
+                "username": user.username.value,
+                "exp": exp,
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+        expired_refresh_token =jwt.encode(
+            {
+                "sid": session.id.value,
+                "sub": user.id.value,
+                "username": user.username.value,
+                "exp": datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS-1),
+                "type": "refresh",
+            },
+            settings.JWT_SECRET, 
+            algorithm=settings.JWT_ALGORITHM
+        )
+
+
+        producer = MagicMock()
+
+        logout_service = LogoutService(
+            user_repo=user_repo,
+            session_repo=session_repo,
+            event_publisher=EventPublisher(
+                producer=producer, default_topic="test-topic"
+            ),
+            jwt_tools=JWT_Tools(),
+        )
+
+        with pytest.raises(AuthenticationFailed):
+            logout_service.execute(
+                refresh_token=incomplete_refresh_token
+            )
+            logout_service.execute(
+                refresh_token=invalid_type_refresh_token
+            )
+            logout_service.execute(
+                refresh_token=invalid_data_refresh_token
+            )
+            logout_service.execute(
+                refresh_token=invalid_data2_refresh_token
+            )
+            logout_service.execute(
+                refresh_token=expired_refresh_token
+            )
+
+

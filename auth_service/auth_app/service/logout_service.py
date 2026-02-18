@@ -1,4 +1,4 @@
-from core.exceptions import InvalidToken
+from core.exceptions import AuthenticationFailed, InvalidToken
 from auth_app.infrastructure.cache.session_repository import SessionRepository
 from auth_app.domain.repositories.user_repository import UserRepository
 from auth_app.infrastructure.messaging.event_publisher import EventPublisher
@@ -20,17 +20,23 @@ class LogoutService:
         self.jwt_tools = jwt_tools
 
     def execute(self, refresh_token: str):
-        payload = self.jwt_tools.decode_token(refresh_token)
+        try:
+            payload = self.jwt_tools.decode_token(refresh_token)
+        except InvalidToken:
+            raise AuthenticationFailed("Refresh token is invalid")
         required_claims = {"sub", "sid", "type"}
         if not required_claims.issubset(payload) or payload.get("type") != "refresh":
-            raise InvalidToken("Refresh token is invalid or has wrong type")
+            raise AuthenticationFailed("Refresh token is invalid or has wrong type")
 
-        user = self.user_repo.get_by_id(id=ID(payload["sub"]))
+        try:
+            user = self.user_repo.get_by_id(id=ID(payload["sub"]))
 
-        session = self.session_repo.get_by_id(ID(payload["sid"]))
+            session = self.session_repo.get_by_id(ID(payload["sid"]))
+        except (TypeError, ValueError):
+            raise AuthenticationFailed("Refresh token is invalid or has wrong data")
         session_device = session.device
         if session.user_id != user.id:
-            raise InvalidToken("Refresh token is invalid or has wrong data")
+            raise AuthenticationFailed("Refresh token is invalid or has wrong data")
         self.session_repo.delete(id=session.id, user_id=session.user_id)
 
         self.event_publisher.publish_user_logged_out(

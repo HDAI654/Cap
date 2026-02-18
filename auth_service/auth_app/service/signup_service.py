@@ -1,4 +1,4 @@
-from core.exceptions import BadRequestError
+from core.exceptions import BadRequestError, UserAlreadyExists
 from auth_app.domain.ports.session_repository import SessionRepository
 from auth_app.domain.repositories.user_repository import UserRepository
 from auth_app.infrastructure.messaging.event_publisher import EventPublisher
@@ -25,10 +25,16 @@ class SignupService:
 
     def execute(self, username: str, email: str, password: str, device: str):
         hashed_password = self.password_hasher.hash(password)
-        user = UserFactory.create(
-            username=username, email=email, hashed_password=hashed_password
-        )
-        self.user_repo.add(user)
+        try:
+            user = UserFactory.create(
+                username=username, email=email, hashed_password=hashed_password
+            )
+        except (TypeError, ValueError) as e:
+            raise BadRequestError(str(e))
+        try:
+            self.user_repo.add(user)
+        except UserAlreadyExists as e:
+            raise BadRequestError(str(e))
 
         self.event_publisher.publish_user_created(
             user_id=user.id, username=user.username, email=user.email
