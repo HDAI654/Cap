@@ -7,10 +7,14 @@ class PasswordHasher:
         try:
             return make_password(password)
         except Exception as e:
-            raise PasswordHasherError(f"Unexpected error occurred during hashing password:\n{str(e)}") from e
+            raise PasswordHasherError(
+                f"Unexpected error occurred during hashing password:\n{str(e)}"
+            ) from e
 
     def verify(self, plain: str, hashed: str) -> bool:
         try:
             return check_password(plain, hashed)
         except Exception as e:
-            raise PasswordHasherError(f"Unexpected error occurred during verifying password:\n{str(e)}") from e
+            raise PasswordHasherError(
+                f"Unexpected error occurred during verifying password:\n{str(e)}"
+            ) from e

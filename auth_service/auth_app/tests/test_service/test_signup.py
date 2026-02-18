@@ -20,14 +20,10 @@ class TestSignup:
     signup_service = SignupService(
         user_repo=DjangoUserRepository(),
         session_repo=RedisSessionRepository(redis_client=fake_redis),
-        event_publisher=EventPublisher(
-            producer=producer, default_topic="test-topic"
-        ),
+        event_publisher=EventPublisher(producer=producer, default_topic="test-topic"),
         jwt_tools=JWT_Tools(),
         password_hasher=PasswordHasher(),
     )
-        
-
 
     def test_signup_success(self):
         access_token, refresh_token = self.signup_service.execute(
@@ -38,7 +34,7 @@ class TestSignup:
         )
 
         assert isinstance(access_token, str) and isinstance(refresh_token, str)
-    
+
     def test_signup_with_duplicate_username_or_email(self):
         self.signup_service.execute(
             username="TestUser556",
@@ -46,7 +42,7 @@ class TestSignup:
             password="TestPassword123666",
             device="test-device",
         )
-        
+
         with pytest.raises(BadRequestError):
             self.signup_service.execute(
                 username="DifferentUsername",
@@ -60,8 +56,8 @@ class TestSignup:
                 password="TestPassword123666",
                 device="test-device",
             )
-    
-    def test_signup_with_invalid_username_or_email(self):        
+
+    def test_signup_with_invalid_username_or_email(self):
         with pytest.raises(BadRequestError):
             self.signup_service.execute(
                 username="نام کاربری",
@@ -75,4 +71,3 @@ class TestSignup:
                 password="TestPassword123666",
                 device="test-device",
             )
-

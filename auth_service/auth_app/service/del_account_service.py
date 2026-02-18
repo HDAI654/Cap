@@ -1,4 +1,9 @@
-from core.exceptions import AuthenticationFailed, InvalidToken, UserNotFound, SessionDoesNotExist
+from core.exceptions import (
+    AuthenticationFailed,
+    InvalidToken,
+    UserNotFound,
+    SessionDoesNotExist,
+)
 from auth_app.infrastructure.cache.session_repository import SessionRepository
 from auth_app.domain.repositories.user_repository import UserRepository
 from auth_app.infrastructure.messaging.event_publisher import EventPublisher
@@ -37,8 +42,6 @@ class DelAccountService:
             raise AuthenticationFailed("Refresh token is invalid or has wrong data")
         self.user_repo.delete(id=user.id)
         self.session_repo.delete_all_user_sessions(user_id=user.id)
-        
-        
 
         self.event_publisher.publish_account_deleted(
             user_id=user.id,

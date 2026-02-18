@@ -107,9 +107,7 @@ class TestEventPublisher:
         self.publisher.publish = MagicMock()
         user_id = ID()
         username = Username("alice")
-        self.publisher.publish_account_deleted(
-            user_id=user_id, username=username
-        )
+        self.publisher.publish_account_deleted(user_id=user_id, username=username)
 
         self.publisher.publish.assert_called_once_with(
             "account_deleted",

@@ -20,7 +20,7 @@ class SessionRepository(ABC):
     def delete(self, id: ID, user_id: ID) -> None:
         """Delete a session."""
         pass
-    
+
     @abstractmethod
     def delete_all_user_sessions(self, user_id: ID) -> None:
         """Delete all sessions of user."""

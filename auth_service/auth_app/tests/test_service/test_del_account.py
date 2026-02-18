@@ -39,7 +39,9 @@ class TestDelAccount:
         session = SessionFactory.create(user_id=user.id.value, device="test-device")
         session_repo.add(session)
 
-        exp = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        exp = datetime.now(timezone.utc) + timedelta(
+            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
 
         payload = {
             "sid": session.id.value,
@@ -80,19 +82,21 @@ class TestDelAccount:
         session = SessionFactory.create(user_id=user.id.value, device="test-device")
         session_repo.add(session)
 
-        exp = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        exp = datetime.now(timezone.utc) + timedelta(
+            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
 
         # create invalid tokens
         invalid_refresh_token = "invalid-refresh-token"
         incomplete_refresh_token = jwt.encode(
             {
-                "sid": session.id.value, # remove 'sub'
+                "sid": session.id.value,  # remove 'sub'
                 "username": user.username.value,
                 "exp": exp,
                 "type": "refresh",
-            }, 
-            settings.JWT_SECRET, 
-            algorithm=settings.JWT_ALGORITHM
+            },
+            settings.JWT_SECRET,
+            algorithm=settings.JWT_ALGORITHM,
         )
         invalid_type_refresh_token = jwt.encode(
             {
@@ -102,8 +106,8 @@ class TestDelAccount:
                 "exp": exp,
                 "type": "access",
             },
-            settings.JWT_SECRET, 
-            algorithm=settings.JWT_ALGORITHM
+            settings.JWT_SECRET,
+            algorithm=settings.JWT_ALGORITHM,
         )
         invalid_data_refresh_token = jwt.encode(
             {
@@ -113,8 +117,8 @@ class TestDelAccount:
                 "exp": exp,
                 "type": "refresh",
             },
-            settings.JWT_SECRET, 
-            algorithm=settings.JWT_ALGORITHM
+            settings.JWT_SECRET,
+            algorithm=settings.JWT_ALGORITHM,
         )
         invalid_data2_refresh_token = jwt.encode(
             {
@@ -124,21 +128,22 @@ class TestDelAccount:
                 "exp": exp,
                 "type": "refresh",
             },
-            settings.JWT_SECRET, 
-            algorithm=settings.JWT_ALGORITHM
+            settings.JWT_SECRET,
+            algorithm=settings.JWT_ALGORITHM,
         )
-        expired_refresh_token =jwt.encode(
+        expired_refresh_token = jwt.encode(
             {
                 "sid": session.id.value,
                 "sub": user.id.value,
                 "username": user.username.value,
-                "exp": datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS-1),
+                "exp": datetime.now(timezone.utc)
+                + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS - 1),
                 "type": "refresh",
             },
-            settings.JWT_SECRET, 
-            algorithm=settings.JWT_ALGORITHM
+            settings.JWT_SECRET,
+            algorithm=settings.JWT_ALGORITHM,
         )
-        nonexistent_user_refresh_token =jwt.encode(
+        nonexistent_user_refresh_token = jwt.encode(
             {
                 "sid": session.id.value,
                 "sub": "nonexistent",
@@ -146,10 +151,10 @@ class TestDelAccount:
                 "exp": exp,
                 "type": "refresh",
             },
-            settings.JWT_SECRET, 
-            algorithm=settings.JWT_ALGORITHM
+            settings.JWT_SECRET,
+            algorithm=settings.JWT_ALGORITHM,
         )
-        nonexistent_session_refresh_token =jwt.encode(
+        nonexistent_session_refresh_token = jwt.encode(
             {
                 "sid": "nonexistent",
                 "sub": user.id.value,
@@ -157,10 +162,9 @@ class TestDelAccount:
                 "exp": exp,
                 "type": "refresh",
             },
-            settings.JWT_SECRET, 
-            algorithm=settings.JWT_ALGORITHM
+            settings.JWT_SECRET,
+            algorithm=settings.JWT_ALGORITHM,
         )
-
 
         producer = MagicMock()
 
@@ -174,29 +178,11 @@ class TestDelAccount:
         )
 
         with pytest.raises(AuthenticationFailed):
-            logout_service.execute(
-                refresh_token=invalid_refresh_token
-            )
-            logout_service.execute(
-                refresh_token=incomplete_refresh_token
-            )
-            logout_service.execute(
-                refresh_token=invalid_type_refresh_token
-            )
-            logout_service.execute(
-                refresh_token=invalid_data_refresh_token
-            )
-            logout_service.execute(
-                refresh_token=invalid_data2_refresh_token
-            )
-            logout_service.execute(
-                refresh_token=expired_refresh_token
-            )
-            logout_service.execute(
-                refresh_token=nonexistent_user_refresh_token
-            )
-            logout_service.execute(
-                refresh_token=nonexistent_session_refresh_token
-            )
-
-
+            logout_service.execute(refresh_token=invalid_refresh_token)
+            logout_service.execute(refresh_token=incomplete_refresh_token)
+            logout_service.execute(refresh_token=invalid_type_refresh_token)
+            logout_service.execute(refresh_token=invalid_data_refresh_token)
+            logout_service.execute(refresh_token=invalid_data2_refresh_token)
+            logout_service.execute(refresh_token=expired_refresh_token)
+            logout_service.execute(refresh_token=nonexistent_user_refresh_token)
+            logout_service.execute(refresh_token=nonexistent_session_refresh_token)

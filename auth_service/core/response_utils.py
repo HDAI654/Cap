@@ -2,6 +2,7 @@ from rest_framework.response import Response
 from django.conf import settings
 from core.exceptions import ResponseProducerError
 
+
 class ResponseProducer:
     @staticmethod
     def build_response_with_tokens(
@@ -17,7 +18,11 @@ class ResponseProducer:
                         {"access": access_token, "message": message}, status=200
                     )
                 return Response(
-                    {"access": access_token, "refresh": refresh_token, "message": message},
+                    {
+                        "access": access_token,
+                        "refresh": refresh_token,
+                        "message": message,
+                    },
                     status=200,
                 )
 
@@ -47,4 +52,6 @@ class ResponseProducer:
 
             return response
         except Exception as e:
-            raise ResponseProducerError(f"Unexpected error occurred during response generation:\n{str(e)}") from e
+            raise ResponseProducerError(
+                f"Unexpected error occurred during response generation:\n{str(e)}"
+            ) from e

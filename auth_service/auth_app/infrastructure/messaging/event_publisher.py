@@ -71,9 +71,8 @@ class EventPublisher:
                 "session_id": session_id.value,
             },
         )
-    def publish_account_deleted(
-        self, user_id: ID, username: Username
-    ):
+
+    def publish_account_deleted(self, user_id: ID, username: Username):
         self.publish(
             "account_deleted",
             {

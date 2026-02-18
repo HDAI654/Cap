@@ -23,9 +23,7 @@ class TestLogin:
     login_service = LoginService(
         user_repo=DjangoUserRepository(),
         session_repo=RedisSessionRepository(redis_client=fake_redis),
-        event_publisher=EventPublisher(
-            producer=producer, default_topic="test-topic"
-        ),
+        event_publisher=EventPublisher(producer=producer, default_topic="test-topic"),
         jwt_tools=JWT_Tools(),
         password_hasher=PasswordHasher(),
     )
@@ -34,8 +32,6 @@ class TestLogin:
         user = User(username="TestUser556", email="testmail@test.com")
         user.set_password("TestPassword123666")
         user.save()
-
-        
 
         access_token, refresh_token = self.login_service.execute(
             username="TestUser556",
@@ -52,32 +48,34 @@ class TestLogin:
 
         with pytest.raises(AuthenticationFailed):
             # nonexistent email
-            self.login_service.execute(username="TestUser556", email="nonexistent.email@test.com", password="TestPassword123666", device="AndroidPhone")
+            self.login_service.execute(
+                username="TestUser556",
+                email="nonexistent.email@test.com",
+                password="TestPassword123666",
+                device="AndroidPhone",
+            )
 
             # incorrect password
             self.login_service.execute(
-                username="TestUser556", 
-                email="testmail@test.com", 
-                password="invalid-password", 
-                device="AndroidPhone"
+                username="TestUser556",
+                email="testmail@test.com",
+                password="invalid-password",
+                device="AndroidPhone",
             )
 
             # incorrect username
             self.login_service.execute(
-                username="invalid-username", 
-                email="testmail@test.com", 
-                password="TestPassword123666", 
-                device="AndroidPhone"
+                username="invalid-username",
+                email="testmail@test.com",
+                password="TestPassword123666",
+                device="AndroidPhone",
             )
-    
+
     def test_login_with_invalid_email(self):
         with pytest.raises(BadRequestError):
             self.login_service.execute(
-                username="invalid-username", 
-                email="ایمیل اشتباه@test.com", 
-                password="TestPassword123666", 
-                device="AndroidPhone"
+                username="invalid-username",
+                email="ایمیل اشتباه@test.com",
+                password="TestPassword123666",
+                device="AndroidPhone",
             )
-            
-
-

@@ -26,7 +26,9 @@ class JWT_Tools:
                 payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
             )
         except Exception as e:
-            raise TokenCreationError(f"Unexpected error occurred during access-token generation:\n{str(e)}") from e
+            raise TokenCreationError(
+                f"Unexpected error occurred during access-token generation:\n{str(e)}"
+            ) from e
 
     @staticmethod
     def create_refresh_token(user_id: ID, username: Username, session_id: ID) -> str:
@@ -46,7 +48,9 @@ class JWT_Tools:
                 payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
             )
         except Exception as e:
-            raise TokenCreationError(f"Unexpected error occurred during refresh-token generation:\n{str(e)}") from e
+            raise TokenCreationError(
+                f"Unexpected error occurred during refresh-token generation:\n{str(e)}"
+            ) from e
 
     @staticmethod
     def decode_token(token):
