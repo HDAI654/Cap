@@ -24,7 +24,7 @@ class SignupService:
         self.password_hasher = password_hasher
 
     def execute(self, username: str, email: str, password: str, device: str):
-        hashed_password = self.password_hasher.hash(password)
+        hashed_password = self.password_hasher.hash(str(password))
         try:
             user = UserFactory.create(
                 username=username, email=email, hashed_password=hashed_password
@@ -40,7 +40,10 @@ class SignupService:
             user_id=user.id, username=user.username, email=user.email
         )
 
-        session = SessionFactory.create(user_id=user.id.value, device=device)
+        try:
+            session = SessionFactory.create(user_id=user.id.value, device=device)
+        except (TypeError, ValueError) as e:
+            raise BadRequestError(str(e))
         self.session_repo.add(session)
 
         access_token = self.jwt_tools.create_access_token(user.id, user.username)

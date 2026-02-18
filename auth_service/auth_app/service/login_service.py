@@ -35,7 +35,10 @@ class LoginService:
         if user.username != username:
             raise AuthenticationFailed("Invalid credentials")
 
-        session = SessionFactory.create(user_id=user.id.value, device=device)
+        try:
+            session = SessionFactory.create(user_id=user.id.value, device=device)
+        except (TypeError, ValueError) as e:
+            raise BadRequestError(str(e))
         self.session_repo.add(session)
 
         self.event_publisher.publish_user_logged_in(

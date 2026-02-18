@@ -30,3 +30,9 @@ class TestsPasswordHasher:
         hash2 = self.hasher.hash(password)
 
         assert hash1 != hash2
+
+    def test_hash_and_verify_with_invalid_data(self):
+        with pytest.raises(TypeError):
+            self.hasher.hash(password=112055)
+            self.hasher.verify(plain=1100585, hashed="JEICEI*Hiec8e")
+            self.hasher.hash(plain="JEICEI*Hiec8e", hashed=1100585)
