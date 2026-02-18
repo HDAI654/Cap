@@ -47,4 +47,4 @@ class ResponseProducer:
 
             return response
         except Exception as e:
-            raise ResponseProducerError(f"Unexpected error occurred during response generation:\n{str(e)}")
+            raise ResponseProducerError(f"Unexpected error occurred during response generation:\n{str(e)}") from e
