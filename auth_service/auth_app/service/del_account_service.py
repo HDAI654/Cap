@@ -31,19 +31,16 @@ class DelAccountService:
         try:
             user = self.user_repo.get_by_id(id=ID(payload["sub"]))
             session = self.session_repo.get_by_id(ID(payload["sid"]))
-            all_user_sessions = self.session_repo.get_by_user_id(user_id=ID(payload["sub"]))
         except (TypeError, ValueError, UserNotFound, SessionDoesNotExist):
             raise AuthenticationFailed("Refresh token is invalid or has wrong data")
-        session_device = session.device
         if session.user_id != user.id:
             raise AuthenticationFailed("Refresh token is invalid or has wrong data")
         self.user_repo.delete(id=user.id)
+        self.session_repo.delete_all_user_sessions(user_id=user.id)
         
         
 
-        self.event_publisher.publish_user_logged_out(
+        self.event_publisher.publish_account_deleted(
             user_id=user.id,
             username=user.username,
-            device=session_device,
-            session_id=session.id,
         )
