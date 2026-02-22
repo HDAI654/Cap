@@ -21,7 +21,7 @@ from auth_app.infrastructure.security.jwt_tools import JWT_Tools
 from auth_app.infrastructure.security.password_hasher import PasswordHasher
 from core.response_utils import ResponseProducer
 from auth_app.api.v1.serializers import SignupSerializer
-from core.exceptions import UserAlreadyExists, SessionStorageError
+from core.exceptions import BadRequestError
 
 logger = logging.getLogger(__name__)
 
@@ -81,45 +81,15 @@ class SignupView(APIView):
 
             return response
 
-        except ValueError as e:
+        except BadRequestError as e:
             return Response(
                 data={"success": False, "error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        except UserAlreadyExists:
-            return Response(
-                {"success": False, "error": "Email or username already exists"},
-                status=status.HTTP_409_CONFLICT,
-            )
-        except IntegrityError:
-            return Response(
-                {"success": False, "error": "Email or username already exists"},
-                status=status.HTTP_409_CONFLICT,
-            )
-        except OperationalError:
-            logger.exception("Signup failed !")
-            return Response(
-                {
-                    "success": False,
-                    "error": "Service temporarily unavailable. Please try again.",
-                },
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-        except DataError:
-            return Response(
-                {
-                    "success": False,
-                    "error": "Invalid data provided. Please check field values.",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except SessionStorageError:
-            return Response(
-                {"success": False, "error": "Faild to sign you up ! Please try again."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+
         except Exception:
+            logger.exception("Failed to register user - unexpected error")
             return Response(
-                data={"success": False, "error": "Unexpected error occurred !"},
+                data={"success": False, "error": "INTERNAL_SERVER_ERROR"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

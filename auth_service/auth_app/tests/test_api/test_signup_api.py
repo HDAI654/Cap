@@ -1,6 +1,6 @@
 import pytest
 import fakeredis
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 from django.urls import reverse
 from rest_framework import status
 from django.contrib.auth import get_user_model
@@ -38,13 +38,6 @@ class TestSignupEndpoint:
         }
 
     def test_signup_success_web(self, client, mocker, signup_url, valid_payload):
-        """
-        WEB client:
-        - user created
-        - cookies set
-        - no tokens in JSON body
-        """
-
         response = client.post(
             signup_url,
             valid_payload,
@@ -80,13 +73,6 @@ class TestSignupEndpoint:
         assert refresh_payload["username"] == user.username
 
     def test_signup_success_android(self, client, mocker, signup_url, valid_payload):
-        """
-        ANDROID client:
-        - user created
-        - no cookies
-        - tokens returned in JSON
-        """
-
         response = client.post(
             signup_url,
             valid_payload,
