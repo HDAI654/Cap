@@ -41,12 +41,9 @@ class RedisSessionRepository(SessionRepository):
 
             pipe.execute()
         except RedisError as e:
-            logger.exception(
-                "Failed to save session session_id=%s user_id=%s",
-                session.id.value,
-                session.user_id.value,
-            )
-            raise SessionStorageError("Failed to save session") from e
+            raise SessionStorageError(
+                f"Failed to save session session_id={session.id.value} user_id={session.user_id.value}"
+            ) from e
 
         logger.info("Session saved successfully")
         return session
@@ -69,12 +66,9 @@ class RedisSessionRepository(SessionRepository):
 
             results = pipe.execute()
         except RedisError as e:
-            logger.exception(
-                "Failed to delete session session_id=%s user_id=%s",
-                id.value,
-                user_id.value,
-            )
-            raise SessionStorageError("Failed to delete session") from e
+            raise SessionStorageError(
+                f"Failed to delete session session_id={id.value} user_id={user_id.value}"
+            ) from e
 
         deleted = results[0]
         removed = results[1]
@@ -124,11 +118,9 @@ class RedisSessionRepository(SessionRepository):
             )
 
         except RedisError as e:
-            logger.exception(
-                "Failed to delete all sessions for user_id=%s",
-                user_id.value,
-            )
-            raise SessionStorageError("Failed to delete all user sessions") from e
+            raise SessionStorageError(
+                f"Failed to delete all user sessions for user_id={user_id.value}"
+            ) from e
 
     def get_by_id(self, id: ID) -> SessionEntity:
         logger.info("Fetching session session_id=%s", id.value)
@@ -137,11 +129,9 @@ class RedisSessionRepository(SessionRepository):
         try:
             data = self.redis_client.hgetall(key_session)
         except RedisError as e:
-            logger.error(
-                "Failed fetching session session_id=%s",
-                id.value,
-            )
-            raise SessionStorageError("Failed fetching session") from e
+            raise SessionStorageError(
+                f"Failed fetching session session_id={id.value}"
+            ) from e
 
         if not data:
             logger.debug("Session not found session_id=%s", id.value)
@@ -165,11 +155,9 @@ class RedisSessionRepository(SessionRepository):
             session_ids_bytes = self.redis_client.smembers(key_user_sessions)
             session_ids = {sid.decode() for sid in session_ids_bytes}
         except RedisError as e:
-            logger.error(
-                "Failed fetching user's session list user_id=%s",
-                user_id.value,
-            )
-            raise SessionStorageError("Failed fetching user sessions") from e
+            raise SessionStorageError(
+                f"Failed fetching user sessions user_id={user_id.value}"
+            ) from e
 
         if not session_ids:
             logger.debug("No sessions found for user_id=%s", user_id.value)

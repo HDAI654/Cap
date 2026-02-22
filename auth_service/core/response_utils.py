@@ -1,4 +1,5 @@
 from rest_framework.response import Response
+from rest_framework import status
 from django.conf import settings
 from core.exceptions import ResponseProducerError
 
@@ -15,7 +16,8 @@ class ResponseProducer:
             if client_type == "android":
                 if refresh_token is None:
                     return Response(
-                        {"access": access_token, "message": message}, status=200
+                        {"access": access_token, "message": message},
+                        status=status.HTTP_200_OK,
                     )
                 return Response(
                     {
@@ -23,11 +25,11 @@ class ResponseProducer:
                         "refresh": refresh_token,
                         "message": message,
                     },
-                    status=200,
+                    status=status.HTTP_200_OK,
                 )
 
             # WEB → set cookies
-            response = Response({"message": message}, status=200)
+            response = Response({"message": message}, status=status.HTTP_200_OK)
 
             access_age = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
             refresh_age = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600

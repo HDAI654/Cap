@@ -9,7 +9,7 @@ class SessionFactory:
     def create(
         *,
         user_id: str,
-        device: str,
+        device: str = "unknown",
         session_id: str = None,
         created_at: float | int = None
     ) -> SessionEntity:
