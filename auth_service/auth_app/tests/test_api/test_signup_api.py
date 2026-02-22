@@ -46,7 +46,7 @@ class TestSignupEndpoint:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data == {"message": "User registered successfully."}
+        assert response.data["message"] == "User registered successfully."
 
         # --- User created ---
         user = User.objects.get(username=valid_payload["username"])

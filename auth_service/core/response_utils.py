@@ -10,7 +10,10 @@ class ResponseProducer:
         request, access_token, refresh_token=None, message="OK"
     ):
         try:
-            client_type = request.headers.get("X-Client", "web").lower()
+            client_type = request.headers.get("X-Client")
+            if not client_type:
+                client_type = request.headers.get("User-Agent", "unknown")
+            client_type = str(client_type).lower()
 
             # ANDROID → return tokens as JSON
             if client_type == "android":

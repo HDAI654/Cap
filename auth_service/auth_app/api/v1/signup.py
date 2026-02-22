@@ -45,7 +45,10 @@ class SignupView(APIView):
             username = data["username"]
             email = data["email"]
             password = data["password"]
-            device = str(request.headers.get("User-Agent", "unknown"))
+            device = request.headers.get("X-Client")
+            if not device:
+                device = request.headers.get("User-Agent", "unknown")
+            device = str(device).lower()
 
             redis_client = get_redis_client()
             kafka_producer = get_producer()

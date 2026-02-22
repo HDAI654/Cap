@@ -19,7 +19,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class LogoutSerializer(serializers.Serializer):
-    refresh_token = serializers.CharField()
+    refresh = serializers.CharField(required=False)
 
 
 class RotationSerializer(serializers.Serializer):

@@ -28,8 +28,8 @@ class LoginView(APIView):
     """
 
     def post(self, request):
-        logger.info("Login started.")
         try:
+            logger.info("Login started.")
             serializer = LoginSerializer(data=request.data)
 
             if not serializer.is_valid():
@@ -40,7 +40,10 @@ class LoginView(APIView):
             username = data["username"]
             email = data["email"]
             password = data["password"]
-            device = str(request.headers.get("User-Agent", "unknown"))
+            device = request.headers.get("X-Client")
+            if not device:
+                device = request.headers.get("User-Agent", "unknown")
+            device = str(device).lower()
 
             redis_client = get_redis_client()
             kafka_producer = get_producer()
