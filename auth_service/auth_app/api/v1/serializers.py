@@ -23,10 +23,12 @@ class LogoutSerializer(serializers.Serializer):
 
 
 class RotationSerializer(serializers.Serializer):
-    refresh_token = serializers.CharField()
-    device = serializers.CharField()
+    refresh = serializers.CharField(required=False)
 
 
 class RevokeSerializer(serializers.Serializer):
-    refresh_token = serializers.CharField()
+    refresh = serializers.CharField()
     session_id = serializers.CharField()
+
+class DelAccountSerializer(serializers.Serializer):
+    refresh = serializers.CharField(required=False)

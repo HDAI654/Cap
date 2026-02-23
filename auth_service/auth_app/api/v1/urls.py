@@ -5,6 +5,7 @@ from auth_app.api.v1.logout import LogoutView
 from auth_app.api.v1.rotation import RotationView
 
 # from auth_app.api.v1.revoke import RevokeView
+from auth_app.api.v1.del_account import DelAccountView
 
 urlpatterns = [
     path("signup/", SignupView.as_view(), name="signup"),
@@ -12,4 +13,5 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="logout"),
     path("rotation/", RotationView.as_view(), name="rotation"),
     # path("revoke/", RevokeView.as_view(), name="revoke"),
+    path("delac/", DelAccountView.as_view(), name="delac"),
 ]
