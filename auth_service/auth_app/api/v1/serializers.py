@@ -30,5 +30,6 @@ class RevokeSerializer(serializers.Serializer):
     refresh = serializers.CharField()
     session_id = serializers.CharField()
 
+
 class DelAccountSerializer(serializers.Serializer):
     refresh = serializers.CharField(required=False)

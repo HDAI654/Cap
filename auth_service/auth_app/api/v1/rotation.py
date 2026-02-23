@@ -83,7 +83,7 @@ class RotationView(APIView):
             logger.info("Rotation finished successfully.")
 
             return response
-        
+
         except AuthenticationFailed as e:
             return Response(
                 data={"success": False, "error": str(e)},

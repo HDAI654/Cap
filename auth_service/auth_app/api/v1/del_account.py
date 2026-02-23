@@ -85,7 +85,8 @@ class DelAccountView(APIView):
             logger.info("Deleting account finished successfully.")
 
             response = Response(
-                {"message": "Account deleted out successfully."}, status=status.HTTP_200_OK
+                {"message": "Account deleted out successfully."},
+                status=status.HTTP_200_OK,
             )
 
             if device != "android":

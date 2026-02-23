@@ -84,12 +84,10 @@ class TestRotationEndpoint:
                 session_id=test_session.id,
             ),
         }
-    
+
     @pytest.fixture
     def valid_should_rotate_payload(self, test_user, test_session):
-        exp = datetime.now(timezone.utc) + timedelta(
-            days=1
-        )
+        exp = datetime.now(timezone.utc) + timedelta(days=1)
         exp = exp.timestamp()
         payload = {
             "sid": test_session.id.value,
@@ -162,7 +160,13 @@ class TestRotationEndpoint:
         assert access_payload["username"] == test_user.username
 
     def test_rotation_success_web_with_new_refresh_token(
-        self, client, mocker, rotation_url, valid_should_rotate_payload, test_user, test_session
+        self,
+        client,
+        mocker,
+        rotation_url,
+        valid_should_rotate_payload,
+        test_user,
+        test_session,
     ):
         mock_get_by_id = mocker.patch(
             "auth_app.infrastructure.cache.session_repository.RedisSessionRepository.get_by_id"
@@ -199,7 +203,13 @@ class TestRotationEndpoint:
         assert refresh_payload["username"] == test_user.username
 
     def test_rotation_success_android_with_new_refresh_token(
-        self, client, mocker, rotation_url, valid_should_rotate_payload, test_user, test_session
+        self,
+        client,
+        mocker,
+        rotation_url,
+        valid_should_rotate_payload,
+        test_user,
+        test_session,
     ):
         mock_get_by_id = mocker.patch(
             "auth_app.infrastructure.cache.session_repository.RedisSessionRepository.get_by_id"
