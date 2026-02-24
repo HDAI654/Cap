@@ -43,9 +43,6 @@ class TokenRotationService:
             session = self.session_repo.get_by_id(ID(payload["sid"]))
             if session.user_id != user.id:
                 raise AuthenticationFailed("Refresh token is invalid or has wrong data")
-            self.session_repo.delete(id=session.id, user_id=session.user_id)
-            session = SessionFactory.create(user_id=user.id.value, device=device)
-            self.session_repo.add(session)
         except (TypeError, ValueError, UserNotFound, SessionDoesNotExist):
             raise AuthenticationFailed("Refresh token is invalid or has wrong data")
 
@@ -53,6 +50,12 @@ class TokenRotationService:
 
         need = self.jwt_tools.should_rotate_refresh_token(DateTime(exp))
         if need:
+            try:
+                self.session_repo.delete(id=session.id, user_id=session.user_id)
+                session = SessionFactory.create(user_id=user.id.value, device=device)
+                self.session_repo.add(session)
+            except (TypeError, ValueError, UserNotFound, SessionDoesNotExist):
+                raise AuthenticationFailed("Refresh token is invalid or has wrong data")
             new_refresh = self.jwt_tools.create_refresh_token(
                 user.id, user.username, session.id
             )
