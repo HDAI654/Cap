@@ -38,7 +38,7 @@ class RotationView(APIView):
             if not device:
                 device = request.headers.get("User-Agent", "unknown")
             device = str(device).lower()
-            if device == "android":
+            if device == "android" or device == "ios":
                 refresh_token = data.get("refresh")
                 if refresh_token is None:
                     return Response(

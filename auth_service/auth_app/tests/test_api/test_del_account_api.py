@@ -82,15 +82,31 @@ class TestDelAccountEndpoint:
             ),
         }
 
+    @pytest.fixture
+    def access_token(self, test_user):
+        return JWT_Tools.create_access_token(
+            user_id=test_user.id,
+            username=test_user.username,
+        )
+
     def test_delac_success_web(
-        self, client, mocker, delac_url, valid_payload, test_user, test_session
+        self,
+        client,
+        mocker,
+        delac_url,
+        valid_payload,
+        test_user,
+        test_session,
+        access_token,
     ):
         mock_get_by_id = mocker.patch(
             "auth_app.infrastructure.cache.session_repository.RedisSessionRepository.get_by_id"
         )
         mock_get_by_id.return_value = test_session
 
-        client.cookies.load({"refresh": valid_payload["refresh"]})
+        client.cookies.load(
+            {"refresh": valid_payload["refresh"], "access": access_token}
+        )
         response = client.post(
             delac_url,
             {},
@@ -117,7 +133,14 @@ class TestDelAccountEndpoint:
         assert not self.fake_redis_client.hgetall(key_session)
 
     def test_delac_success_android(
-        self, client, mocker, delac_url, valid_payload, test_user, test_session
+        self,
+        client,
+        mocker,
+        delac_url,
+        valid_payload,
+        test_user,
+        test_session,
+        access_token,
     ):
         mock_get_by_id = mocker.patch(
             "auth_app.infrastructure.cache.session_repository.RedisSessionRepository.get_by_id"
@@ -130,6 +153,7 @@ class TestDelAccountEndpoint:
             format="json",
             HTTP_USER_AGENT="pytest-agent",
             HTTP_X_CLIENT="android",
+            HTTP_AUTHORIZATION=f"Bearer {access_token}",
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -148,3 +172,51 @@ class TestDelAccountEndpoint:
         # --- Session deleted ---
         key_session = f"session:{test_session.id.value}"
         assert not self.fake_redis_client.hgetall(key_session)
+
+    def test_block_request_without_access_token(
+        self,
+        client,
+        mocker,
+        delac_url,
+        valid_payload,
+        test_user,
+        test_session,
+        access_token,
+    ):
+        mock_get_by_id = mocker.patch(
+            "auth_app.infrastructure.cache.session_repository.RedisSessionRepository.get_by_id"
+        )
+        mock_get_by_id.return_value = test_session
+
+        # ANDROID/IOS
+        response = client.post(
+            delac_url,
+            valid_payload,
+            format="json",
+            HTTP_USER_AGENT="pytest-agent",
+            HTTP_X_CLIENT="android",
+            HTTP_AUTHORIZATION=f"{access_token}",  # incorrect token
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        response = client.post(
+            delac_url,
+            valid_payload,
+            format="json",
+            HTTP_USER_AGENT="pytest-agent",
+            HTTP_X_CLIENT="android",
+            HTTP_AUTHORIZATION=f"{access_token}",  # missed token
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        # Web
+        response = client.post(
+            delac_url,
+            valid_payload,
+            format="json",
+            HTTP_USER_AGENT="pytest-agent",
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN

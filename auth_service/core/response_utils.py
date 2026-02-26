@@ -15,8 +15,8 @@ class ResponseProducer:
                 client_type = request.headers.get("User-Agent", "unknown")
             client_type = str(client_type).lower()
 
-            # ANDROID → return tokens as JSON
-            if client_type == "android":
+            # ANDROID/IOS → return tokens as JSON
+            if client_type == "android" or client_type == "ios":
                 if refresh_token is None:
                     return Response(
                         {"access": access_token, "message": message},

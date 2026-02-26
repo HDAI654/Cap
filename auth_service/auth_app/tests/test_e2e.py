@@ -35,19 +35,19 @@ class TestE2E:
     @pytest.fixture
     def signup_url(self):
         return reverse("signup")
-    
+
     @pytest.fixture
     def logout_url(self):
         return reverse("logout")
-    
+
     @pytest.fixture
     def login_url(self):
         return reverse("login")
-    
+
     @pytest.fixture
     def rotation_url(self):
         return reverse("rotation")
-    
+
     @pytest.fixture
     def delac_url(self):
         return reverse("delac")
@@ -61,15 +61,15 @@ class TestE2E:
         }
 
     def test_e2e_web(
-            self, 
-            client, 
-            signup_url,
-            logout_url,
-            login_url,
-            rotation_url,
-            delac_url,
-            valid_user_data
-        ):
+        self,
+        client,
+        signup_url,
+        logout_url,
+        login_url,
+        rotation_url,
+        delac_url,
+        valid_user_data,
+    ):
         ##### Sign Up #####
         signup_response = client.post(
             signup_url,
@@ -119,10 +119,12 @@ class TestE2E:
 
         # --- Cookies deleted ---
         assert (
-            "access" not in logout_response.cookies or logout_response.cookies["access"].value == ""
+            "access" not in logout_response.cookies
+            or logout_response.cookies["access"].value == ""
         )
         assert (
-            "refresh" not in logout_response.cookies or logout_response.cookies["refresh"].value == ""
+            "refresh" not in logout_response.cookies
+            or logout_response.cookies["refresh"].value == ""
         )
 
         ##### Login #####
@@ -173,7 +175,6 @@ class TestE2E:
         assert access_payload["type"] == "access"
         assert access_payload["username"] == user.username
 
-
         ##### Rotation with new refresh token #####
         exp = datetime.now(timezone.utc) + timedelta(days=1)
         exp = exp.timestamp()
@@ -184,9 +185,9 @@ class TestE2E:
                 "username": user.username,
                 "exp": exp,
                 "type": "refresh",
-            }, 
-            settings.JWT_SECRET, 
-            algorithm=settings.JWT_ALGORITHM
+            },
+            settings.JWT_SECRET,
+            algorithm=settings.JWT_ALGORITHM,
         )
         client.cookies.load({"refresh": should_rotate_refresh_token})
         rotation2response = client.post(
@@ -233,10 +234,12 @@ class TestE2E:
 
         # --- Cookies deleted ---
         assert (
-            "access" not in delac_response.cookies or delac_response.cookies["access"].value == ""
+            "access" not in delac_response.cookies
+            or delac_response.cookies["access"].value == ""
         )
         assert (
-            "refresh" not in delac_response.cookies or delac_response.cookies["refresh"].value == ""
+            "refresh" not in delac_response.cookies
+            or delac_response.cookies["refresh"].value == ""
         )
 
         # --- User deleted ---
@@ -247,22 +250,22 @@ class TestE2E:
         assert not self.fake_redis_client.hgetall(key_session)
 
     def test_e2e_android(
-            self, 
-            client, 
-            signup_url,
-            logout_url,
-            login_url,
-            rotation_url,
-            delac_url,
-            valid_user_data
-        ):
+        self,
+        client,
+        signup_url,
+        logout_url,
+        login_url,
+        rotation_url,
+        delac_url,
+        valid_user_data,
+    ):
         ##### Sign Up #####
         signup_response = client.post(
             signup_url,
             valid_user_data,
             format="json",
             HTTP_USER_AGENT="pytest-agent",
-            HTTP_X_CLIENT="android"
+            HTTP_X_CLIENT="android",
         )
 
         assert signup_response.status_code == status.HTTP_200_OK
@@ -297,10 +300,11 @@ class TestE2E:
         ##### Logout #####
         logout_response = client.post(
             logout_url,
-            {"refresh":refresh_token},
+            {"refresh": refresh_token},
             format="json",
             HTTP_USER_AGENT="pytest-agent",
-            HTTP_X_CLIENT="android"
+            HTTP_X_CLIENT="android",
+            HTTP_AUTHORIZATION=f"Bearer {access_token}",
         )
 
         assert logout_response.status_code == status.HTTP_200_OK
@@ -319,7 +323,7 @@ class TestE2E:
             valid_user_data,
             format="json",
             HTTP_USER_AGENT="pytest-agent",
-            HTTP_X_CLIENT="android"
+            HTTP_X_CLIENT="android",
         )
 
         assert login_response.status_code == status.HTTP_200_OK
@@ -345,10 +349,10 @@ class TestE2E:
         ##### Rotation #####
         rotation_response = client.post(
             rotation_url,
-            {"refresh":refresh_token},
+            {"refresh": refresh_token},
             format="json",
             HTTP_USER_AGENT="pytest-agent",
-            HTTP_X_CLIENT="android"
+            HTTP_X_CLIENT="android",
         )
 
         assert rotation_response.status_code == status.HTTP_200_OK
@@ -362,7 +366,6 @@ class TestE2E:
         assert access_payload["type"] == "access"
         assert access_payload["username"] == user.username
 
-
         ##### Rotation with new refresh token #####
         exp = datetime.now(timezone.utc) + timedelta(days=1)
         exp = exp.timestamp()
@@ -373,16 +376,16 @@ class TestE2E:
                 "username": user.username,
                 "exp": exp,
                 "type": "refresh",
-            }, 
-            settings.JWT_SECRET, 
-            algorithm=settings.JWT_ALGORITHM
+            },
+            settings.JWT_SECRET,
+            algorithm=settings.JWT_ALGORITHM,
         )
         rotation2response = client.post(
             rotation_url,
-            {"refresh":should_rotate_refresh_token},
+            {"refresh": should_rotate_refresh_token},
             format="json",
             HTTP_USER_AGENT="pytest-agent",
-            HTTP_X_CLIENT="android"
+            HTTP_X_CLIENT="android",
         )
 
         assert rotation2response.status_code == status.HTTP_200_OK
@@ -409,7 +412,8 @@ class TestE2E:
             {"refresh": refresh_token},
             format="json",
             HTTP_USER_AGENT="pytest-agent",
-            HTTP_X_CLIENT="android"
+            HTTP_X_CLIENT="android",
+            HTTP_AUTHORIZATION=f"Bearer {access_token}",
         )
 
         assert delac_response.status_code == status.HTTP_200_OK

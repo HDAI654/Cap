@@ -15,12 +15,14 @@ from auth_app.infrastructure.messaging.event_publisher import EventPublisher
 from auth_app.infrastructure.security.jwt_tools import JWT_Tools
 from auth_app.api.v1.serializers import LogoutSerializer
 from core.exceptions import BadRequestError, AuthenticationFailed
+from auth_app.permissions import IsAuthenticatedJWT
 
 logger = logging.getLogger(__name__)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 class LogoutView(APIView):
+    permission_classes = [IsAuthenticatedJWT]
     """
     Logout endpoint.
     """
@@ -40,7 +42,7 @@ class LogoutView(APIView):
                 device = request.headers.get("User-Agent", "unknown")
             device = str(device).lower()
 
-            if device == "android":
+            if device == "android" or device == "ios":
                 refresh_token = data.get("refresh")
                 if refresh_token is None:
                     return Response(

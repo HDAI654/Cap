@@ -82,15 +82,31 @@ class TestLogoutEndpoint:
             ),
         }
 
+    @pytest.fixture
+    def access_token(self, test_user):
+        return JWT_Tools.create_access_token(
+            user_id=test_user.id,
+            username=test_user.username,
+        )
+
     def test_logout_success_web(
-        self, client, mocker, logout_url, valid_payload, test_user, test_session
+        self,
+        client,
+        mocker,
+        logout_url,
+        valid_payload,
+        test_user,
+        test_session,
+        access_token,
     ):
         mock_get_by_id = mocker.patch(
             "auth_app.infrastructure.cache.session_repository.RedisSessionRepository.get_by_id"
         )
         mock_get_by_id.return_value = test_session
 
-        client.cookies.load({"refresh": valid_payload["refresh"]})
+        client.cookies.load(
+            {"refresh": valid_payload["refresh"], "access": access_token}
+        )
         response = client.post(
             logout_url,
             {},
@@ -110,7 +126,14 @@ class TestLogoutEndpoint:
         )
 
     def test_logout_success_android(
-        self, client, mocker, logout_url, valid_payload, test_user, test_session
+        self,
+        client,
+        mocker,
+        logout_url,
+        valid_payload,
+        test_user,
+        test_session,
+        access_token,
     ):
         mock_get_by_id = mocker.patch(
             "auth_app.infrastructure.cache.session_repository.RedisSessionRepository.get_by_id"
@@ -123,6 +146,7 @@ class TestLogoutEndpoint:
             format="json",
             HTTP_USER_AGENT="pytest-agent",
             HTTP_X_CLIENT="android",
+            HTTP_AUTHORIZATION=f"Bearer {access_token}",
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -134,3 +158,51 @@ class TestLogoutEndpoint:
         # --- No cookies ---
         assert "access" not in response.cookies
         assert "refresh" not in response.cookies
+
+    def test_block_request_without_access_token(
+        self,
+        client,
+        mocker,
+        logout_url,
+        valid_payload,
+        test_user,
+        test_session,
+        access_token,
+    ):
+        mock_get_by_id = mocker.patch(
+            "auth_app.infrastructure.cache.session_repository.RedisSessionRepository.get_by_id"
+        )
+        mock_get_by_id.return_value = test_session
+
+        # ANDROID/IOS
+        response = client.post(
+            logout_url,
+            valid_payload,
+            format="json",
+            HTTP_USER_AGENT="pytest-agent",
+            HTTP_X_CLIENT="android",
+            HTTP_AUTHORIZATION=f"{access_token}",  # incorrect token
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        response = client.post(
+            logout_url,
+            valid_payload,
+            format="json",
+            HTTP_USER_AGENT="pytest-agent",
+            HTTP_X_CLIENT="android",
+            HTTP_AUTHORIZATION=f"{access_token}",  # missed token
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        # Web
+        response = client.post(
+            logout_url,
+            valid_payload,
+            format="json",
+            HTTP_USER_AGENT="pytest-agent",
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
