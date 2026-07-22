@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from shared.entity import Entity
-
 from shared.exceptions import InvalidValueError
 
 from wallet_service.src.domain.value_objects.instrument_id import InstrumentId
