@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from shared.base_vo import BaseVO
-from shared.exceptions import InvalidValueError
+from src.exceptions import InvalidValueError
 
 
 class Quantity(BaseVO[int]):
@@ -16,11 +14,11 @@ class Quantity(BaseVO[int]):
 
         super().__init__(value)
 
-    def __add__(self, other: Quantity) -> Quantity:
+    def __add__(self, other: "Quantity") -> "Quantity":
         self._validate_operand(other)
         return Quantity(self.value + other.value)
 
-    def __sub__(self, other: Quantity) -> Quantity:
+    def __sub__(self, other: "Quantity") -> "Quantity":
         self._validate_operand(other)
 
         result = self.value - other.value
@@ -29,24 +27,24 @@ class Quantity(BaseVO[int]):
 
         return Quantity(result)
 
-    def __lt__(self, other: Quantity) -> bool:
+    def __lt__(self, other: "Quantity") -> bool:
         self._validate_operand(other)
         return self.value < other.value
 
-    def __le__(self, other: Quantity) -> bool:
+    def __le__(self, other: "Quantity") -> bool:
         self._validate_operand(other)
         return self.value <= other.value
 
-    def __gt__(self, other: Quantity) -> bool:
+    def __gt__(self, other: "Quantity") -> bool:
         self._validate_operand(other)
         return self.value > other.value
 
-    def __ge__(self, other: Quantity) -> bool:
+    def __ge__(self, other: "Quantity") -> bool:
         self._validate_operand(other)
         return self.value >= other.value
 
     @staticmethod
     def _validate_operand(other: object) -> None:
         """Validate that the operand is a Quantity."""
-        if not isinstance(other, Quantity):
+        if not isinstance(other, "Quantity"):
             raise TypeError(f"Expected Quantity, got {type(other).__name__}.")

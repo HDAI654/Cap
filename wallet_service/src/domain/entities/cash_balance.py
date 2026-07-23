@@ -1,9 +1,5 @@
-from __future__ import annotations
-
 from shared.entity import Entity
-
-from shared.exceptions import InvalidValueError
-
+from src.exceptions import InvalidValueError
 from wallet_service.src.domain.value_objects.currency import Currency
 from wallet_service.src.domain.value_objects.money import Money
 

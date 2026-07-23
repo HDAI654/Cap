@@ -1,5 +1,5 @@
 from shared.entity import Entity
-from shared.exceptions import InvalidValueError
+from src.exceptions import InvalidValueError
 from wallet_service.src.domain.entities.cash_balance import CashBalance
 from wallet_service.src.domain.entities.holding import Holding
 from wallet_service.src.domain.value_objects.wallet_status import WalletStatus

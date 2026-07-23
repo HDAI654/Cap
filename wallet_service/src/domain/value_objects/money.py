@@ -1,6 +1,6 @@
 from decimal import Decimal
 from shared.base_vo import BaseVO
-from shared.exceptions import InvalidValueError
+from src.exceptions import InvalidValueError
 from wallet_service.src.domain.value_objects.currency import Currency
 
 
@@ -30,32 +30,32 @@ class Money(BaseVO[Decimal]):
         """Return the currency."""
         return self._currency
 
-    def __add__(self, other: Money) -> Money:
+    def __add__(self, other: "Money") -> "Money":
         self._ensure_same_currency(other)
         return Money(self.amount + other.amount, self.currency)
 
-    def __sub__(self, other: Money) -> Money:
+    def __sub__(self, other: "Money") -> "Money":
         self._ensure_same_currency(other)
         return Money(self.amount - other.amount, self.currency)
 
-    def __lt__(self, other: Money) -> bool:
+    def __lt__(self, other: "Money") -> bool:
         self._ensure_same_currency(other)
         return self.amount < other.amount
 
-    def __le__(self, other: Money) -> bool:
+    def __le__(self, other: "Money") -> bool:
         self._ensure_same_currency(other)
         return self.amount <= other.amount
 
-    def __gt__(self, other: Money) -> bool:
+    def __gt__(self, other: "Money") -> bool:
         self._ensure_same_currency(other)
         return self.amount > other.amount
 
-    def __ge__(self, other: Money) -> bool:
+    def __ge__(self, other: "Money") -> bool:
         self._ensure_same_currency(other)
         return self.amount >= other.amount
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Money):
+        if not isinstance(other, "Money"):
             return False
 
         return self.amount == other.amount and self.currency == other.currency
@@ -63,6 +63,6 @@ class Money(BaseVO[Decimal]):
     def __hash__(self) -> int:
         return hash((self.amount, self.currency))
 
-    def _ensure_same_currency(self, other: Money) -> None:
+    def _ensure_same_currency(self, other: "Money") -> None:
         if self.currency != other.currency:
             raise InvalidValueError("Money operations require identical currencies.")
