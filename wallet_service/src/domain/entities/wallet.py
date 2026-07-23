@@ -1,5 +1,5 @@
 from shared.entity import Entity
-from src.exceptions import InvalidValueError
+from src.exceptions import CashBalanceNotFoundError, HoldingNotFoundError
 from wallet_service.src.domain.entities.cash_balance import CashBalance
 from wallet_service.src.domain.entities.holding import Holding
 from wallet_service.src.domain.value_objects.wallet_status import WalletStatus
@@ -28,8 +28,6 @@ class Wallet(Entity):
 
         self._cash_balances = cash_balances or []
         self._holdings = holdings or []
-
-        super().__init__()
 
     @classmethod
     def create(cls, trader_id: TraderId) -> "Wallet":
@@ -155,7 +153,9 @@ class Wallet(Entity):
         balance = self._get_cash_balance(currency)
 
         if balance is None:
-            raise InvalidValueError(f"Cash balance for '{currency}' does not exist.")
+            raise CashBalanceNotFoundError(
+                f"Cash balance for '{currency}' does not exist."
+            )
 
         return balance
 
@@ -175,6 +175,6 @@ class Wallet(Entity):
         holding = self._get_holding(instrument_id)
 
         if holding is None:
-            raise InvalidValueError("Holding does not exist.")
+            raise HoldingNotFoundError("Holding does not exist.")
 
         return holding

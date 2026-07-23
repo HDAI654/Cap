@@ -1,5 +1,5 @@
 from shared.entity import Entity
-from src.exceptions import InvalidCurrencyError, CurrencyMismatchError
+from src.exceptions import InvalidMoneyAmountError, CurrencyMismatchError
 from wallet_service.src.domain.value_objects.currency import Currency
 from wallet_service.src.domain.value_objects.money import Money
 
@@ -35,7 +35,7 @@ class CashBalance(Entity):
         self._validate_money(amount)
 
         if self.available < amount:
-            raise InvalidValueError("Insufficient available balance.")
+            raise InvalidMoneyAmountError("Insufficient available balance.")
 
         self.available -= amount
 
@@ -44,7 +44,7 @@ class CashBalance(Entity):
         self._validate_money(amount)
 
         if self.available < amount:
-            raise InvalidValueError("Insufficient available balance.")
+            raise InvalidMoneyAmountError("Insufficient available balance.")
 
         self.available -= amount
         self.reserved += amount
@@ -54,7 +54,7 @@ class CashBalance(Entity):
         self._validate_money(amount)
 
         if self.reserved < amount:
-            raise InvalidValueError("Insufficient reserved balance.")
+            raise InvalidMoneyAmountError("Insufficient reserved balance.")
 
         self.reserved -= amount
         self.available += amount
@@ -64,10 +64,10 @@ class CashBalance(Entity):
         self._validate_money(amount)
 
         if self.reserved < amount:
-            raise InvalidValueError("Insufficient reserved balance.")
+            raise InvalidMoneyAmountError("Insufficient reserved balance.")
 
         self.reserved -= amount
 
     def _validate_money(self, amount: Money) -> None:
         if amount.currency != self.currency:
-            raise InvalidValueError("Currency mismatch.")
+            raise CurrencyMismatchError("Currency mismatch.")

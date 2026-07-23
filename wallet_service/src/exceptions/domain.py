@@ -4,10 +4,7 @@ class DomainError(Exception):
     pass
 
 
-class InvalidValueError(DomainError):
-    pass
-
-
+# ======= VOs =======
 class InvalidQuantityError(DomainError):
     """Raised when a Quantity value is invalid or malformed."""
 
@@ -40,5 +37,43 @@ class MoneyOperationError(DomainError):
 
 class QuantityOperationError(DomainError):
     """Raised when a quantity operation receives an unsupported operand type."""
+
+    pass
+
+
+# ======= # CashBalance Exceptions =======
+class CashBalanceException(DomainError):
+    """Base CashBalance error"""
+
+    pass
+
+
+class CashBalanceNotFoundError(CashBalanceException):
+    """CashBalance not found"""
+
+    pass
+
+
+class CashBalanceDuplicateError(CashBalanceException):
+    """CashBalance with same unique field exists"""
+
+    pass
+
+
+# ======= # Holding Exceptions =======
+class HoldingException(DomainError):
+    """Base Holding error"""
+
+    pass
+
+
+class HoldingNotFoundError(HoldingException):
+    """Holding not found"""
+
+    pass
+
+
+class HoldingDuplicateError(HoldingException):
+    """Holding with same unique field exists"""
 
     pass
