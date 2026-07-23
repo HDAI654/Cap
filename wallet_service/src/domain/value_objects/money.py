@@ -58,16 +58,11 @@ class Money(BaseVO[Decimal]):
         if not isinstance(other, Money):
             return False
 
-        return (
-            self.amount == other.amount
-            and self.currency == other.currency
-        )
+        return self.amount == other.amount and self.currency == other.currency
 
     def __hash__(self) -> int:
         return hash((self.amount, self.currency))
 
     def _ensure_same_currency(self, other: Money) -> None:
         if self.currency != other.currency:
-            raise InvalidValueError(
-                "Money operations require identical currencies."
-            )
+            raise InvalidValueError("Money operations require identical currencies.")

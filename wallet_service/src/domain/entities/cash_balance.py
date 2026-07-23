@@ -18,14 +18,10 @@ class CashBalance(Entity):
         reserved: Money,
     ) -> None:
         if available.currency != currency:
-            raise InvalidValueError(
-                "Available balance currency does not match."
-            )
+            raise InvalidValueError("Available balance currency does not match.")
 
         if reserved.currency != currency:
-            raise InvalidValueError(
-                "Reserved balance currency does not match."
-            )
+            raise InvalidValueError("Reserved balance currency does not match.")
 
         self.currency = currency
         self.available = available
@@ -78,6 +74,4 @@ class CashBalance(Entity):
 
     def _validate_money(self, amount: Money) -> None:
         if amount.currency != self.currency:
-            raise InvalidValueError(
-                "Currency mismatch."
-            )
+            raise InvalidValueError("Currency mismatch.")

@@ -32,18 +32,14 @@ class Holding(Entity):
     def remove(self, quantity: Quantity) -> None:
         """Decrease the available quantity."""
         if self.available < quantity:
-            raise InvalidValueError(
-                "Insufficient available quantity."
-            )
+            raise InvalidValueError("Insufficient available quantity.")
 
         self.available -= quantity
 
     def reserve(self, quantity: Quantity) -> None:
         """Reserve shares."""
         if self.available < quantity:
-            raise InvalidValueError(
-                "Insufficient available quantity."
-            )
+            raise InvalidValueError("Insufficient available quantity.")
 
         self.available -= quantity
         self.reserved += quantity
@@ -51,9 +47,7 @@ class Holding(Entity):
     def release(self, quantity: Quantity) -> None:
         """Release reserved shares."""
         if self.reserved < quantity:
-            raise InvalidValueError(
-                "Insufficient reserved quantity."
-            )
+            raise InvalidValueError("Insufficient reserved quantity.")
 
         self.reserved -= quantity
         self.available += quantity
@@ -61,17 +55,13 @@ class Holding(Entity):
     def consume_reserved(self, quantity: Quantity) -> None:
         """Consume reserved shares permanently."""
         if self.reserved < quantity:
-            raise InvalidValueError(
-                "Insufficient reserved quantity."
-            )
+            raise InvalidValueError("Insufficient reserved quantity.")
 
         self.reserved -= quantity
 
     def update_average_cost(self, average_cost: Money) -> None:
         """Update the weighted average acquisition cost."""
         if average_cost.currency != self.average_cost.currency:
-            raise InvalidValueError(
-                "Currency mismatch."
-            )
+            raise InvalidValueError("Currency mismatch.")
 
         self.average_cost = average_cost

@@ -49,6 +49,4 @@ class Quantity(BaseVO[int]):
     def _validate_operand(other: object) -> None:
         """Validate that the operand is a Quantity."""
         if not isinstance(other, Quantity):
-            raise TypeError(
-                f"Expected Quantity, got {type(other).__name__}."
-            )
+            raise TypeError(f"Expected Quantity, got {type(other).__name__}.")

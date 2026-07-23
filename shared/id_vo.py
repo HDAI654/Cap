@@ -3,6 +3,7 @@ from shared.base_vo import BaseVO
 from shared.exceptions import InvalidIDError
 from typing import Self
 
+
 class ID(BaseVO[str]):
     """
     ID Value Object - UUID v4 format
@@ -16,9 +17,7 @@ class ID(BaseVO[str]):
 
     def __init__(self, value: str):
         if not isinstance(value, str):
-            raise InvalidIDError(
-                f"ID must be string, got {type(value).__name__}"
-            )
+            raise InvalidIDError(f"ID must be string, got {type(value).__name__}")
         value = value.strip()
         if not value:
             raise InvalidIDError("ID must be a non-empty string")
@@ -26,9 +25,7 @@ class ID(BaseVO[str]):
             uuid_obj = uuid.UUID(value, version=self.UUID_VERSION)
             value = str(uuid_obj)
         except Exception:
-            raise InvalidIDError(
-                f"Invalid UUID v{self.UUID_VERSION} format: {value}"
-            )
+            raise InvalidIDError(f"Invalid UUID v{self.UUID_VERSION} format: {value}")
 
         super().__init__(value)
 
