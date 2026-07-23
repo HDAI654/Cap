@@ -1,5 +1,5 @@
 from shared.base_vo import BaseVO
-from src.exceptions import InvalidValueError
+from src.exceptions import InvalidQuantityError, QuantityOperationError
 
 
 class Quantity(BaseVO[int]):
@@ -7,10 +7,10 @@ class Quantity(BaseVO[int]):
 
     def __init__(self, value: int):
         if not isinstance(value, int):
-            raise InvalidValueError("Quantity must be an integer.")
+            raise InvalidQuantityError("Quantity must be an integer.")
 
         if value < 0:
-            raise InvalidValueError("Quantity cannot be negative.")
+            raise InvalidQuantityError("Quantity cannot be negative.")
 
         super().__init__(value)
 
@@ -23,7 +23,7 @@ class Quantity(BaseVO[int]):
 
         result = self.value - other.value
         if result < 0:
-            raise InvalidValueError("Quantity cannot become negative.")
+            raise InvalidQuantityError("Quantity cannot become negative.")
 
         return Quantity(result)
 
@@ -43,8 +43,9 @@ class Quantity(BaseVO[int]):
         self._validate_operand(other)
         return self.value >= other.value
 
-    @staticmethod
     def _validate_operand(other: object) -> None:
         """Validate that the operand is a Quantity."""
-        if not isinstance(other, "Quantity"):
-            raise TypeError(f"Expected Quantity, got {type(other).__name__}.")
+        if not isinstance(other, Quantity):
+            raise QuantityOperationError(
+                f"Expected Quantity, got {type(other).__name__}."
+            )

@@ -1,5 +1,5 @@
 from shared.entity import Entity
-from src.exceptions import InvalidValueError
+from src.exceptions import InvalidCurrencyError, CurrencyMismatchError
 from wallet_service.src.domain.value_objects.currency import Currency
 from wallet_service.src.domain.value_objects.money import Money
 
@@ -14,10 +14,10 @@ class CashBalance(Entity):
         reserved: Money,
     ) -> None:
         if available.currency != currency:
-            raise InvalidValueError("Available balance currency does not match.")
+            raise CurrencyMismatchError("Available balance currency does not match.")
 
         if reserved.currency != currency:
-            raise InvalidValueError("Reserved balance currency does not match.")
+            raise CurrencyMismatchError("Reserved balance currency does not match.")
 
         self.currency = currency
         self.available = available
