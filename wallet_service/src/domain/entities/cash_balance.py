@@ -1,7 +1,7 @@
 from shared.entity import Entity
 from src.exceptions import InvalidMoneyAmountError, CurrencyMismatchError
-from wallet_service.src.domain.value_objects.currency import Currency
-from wallet_service.src.domain.value_objects.money import Money
+from src.domain.value_objects.currency import Currency
+from src.domain.value_objects.money import Money
 
 
 class CashBalance(Entity):

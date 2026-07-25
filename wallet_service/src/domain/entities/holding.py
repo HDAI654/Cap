@@ -1,8 +1,8 @@
 from shared.entity import Entity
 from src.exceptions import InvalidQuantityError, CurrencyMismatchError
-from wallet_service.src.domain.value_objects.instrument_id import InstrumentId
-from wallet_service.src.domain.value_objects.money import Money
-from wallet_service.src.domain.value_objects.quantity import Quantity
+from src.domain.value_objects.instrument_id import InstrumentId
+from src.domain.value_objects.money import Money
+from src.domain.value_objects.quantity import Quantity
 
 
 class Holding(Entity):
