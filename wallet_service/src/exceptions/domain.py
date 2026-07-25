@@ -95,3 +95,22 @@ class HoldingDuplicateError(HoldingException):
     """Holding with same unique field exists"""
 
     pass
+
+
+# ======= # Wallet Exceptions =======
+class WalletException(DomainError):
+    """Base Wallet error"""
+
+    pass
+
+
+class WalletNotFoundError(WalletException):
+    """Wallet not found"""
+
+    pass
+
+
+class WalletDuplicateError(WalletException):
+    """Wallet with same unique field exists"""
+
+    pass

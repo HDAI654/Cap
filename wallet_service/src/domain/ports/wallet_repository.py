@@ -16,16 +16,20 @@ class WalletRepository(ABC):
     async def get_by_id(
         self,
         wallet_id: WalletId,
-    ) -> Wallet | None:
-        """Retrieve a wallet by its identifier."""
+    ) -> Wallet:
+        """Retrieve a wallet by its identifier.
+        Raises:
+            WalletNotFoundError: If no wallet exists for the given identifier."""
         raise NotImplementedError
 
     @abstractmethod
     async def get_by_trader_id(
         self,
         trader_id: TraderId,
-    ) -> Wallet | None:
-        """Retrieve a wallet by trader identifier."""
+    ) -> Wallet:
+        """Retrieve a wallet by trader identifier.
+        Raises:
+            WalletNotFoundError: If no wallet exists for the given identifier."""
         raise NotImplementedError
 
     @abstractmethod
