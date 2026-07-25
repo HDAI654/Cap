@@ -1,5 +1,5 @@
 import pytest
-from wallet_service.src.domain.value_objects.currency import Currency
+from src.domain.value_objects.currency import Currency
 
 
 class TestCurrency:

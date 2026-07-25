@@ -43,7 +43,7 @@ class Quantity(BaseVO[int]):
         self._validate_operand(other)
         return self.value >= other.value
 
-    def _validate_operand(other: object) -> None:
+    def _validate_operand(self, other: object) -> None:
         """Validate that the operand is a Quantity."""
         if not isinstance(other, Quantity):
             raise QuantityOperationError(

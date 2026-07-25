@@ -1,6 +1,6 @@
 import pytest
 import uuid
-from wallet_service.src.domain.value_objects.instrument_id import InstrumentId
+from src.domain.value_objects.instrument_id import InstrumentId
 
 
 class TestInstrumentId:

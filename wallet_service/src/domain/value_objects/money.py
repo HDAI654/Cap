@@ -6,7 +6,7 @@ from src.exceptions import (
     CurrencyMismatchError,
     MoneyOperationError,
 )
-from wallet_service.src.domain.value_objects.currency import Currency
+from src.domain.value_objects.currency import Currency
 
 
 class Money(BaseVO[Decimal]):
@@ -100,7 +100,7 @@ class Money(BaseVO[Decimal]):
                 "Money operations require identical currencies."
             )
 
-    def _validate_operand(operation: str, other: object) -> None:
+    def _validate_operand(self, operation: str, other: object) -> None:
         """Validate that the operand is a Money."""
         if not isinstance(other, Money):
             raise MoneyOperationError(

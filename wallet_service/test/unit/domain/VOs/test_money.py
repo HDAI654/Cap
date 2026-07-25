@@ -1,8 +1,8 @@
 import pytest
 from decimal import Decimal
-from wallet_service.src.domain.value_objects.money import Money
-from wallet_service.src.domain.value_objects.currency import Currency
-from wallet_service.src.exceptions import (
+from src.domain.value_objects.money import Money
+from src.domain.value_objects.currency import Currency
+from src.exceptions import (
     InvalidCurrencyError,
     InvalidMoneyAmountError,
     CurrencyMismatchError,
