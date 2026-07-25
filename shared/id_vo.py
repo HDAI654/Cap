@@ -15,17 +15,17 @@ class ID(BaseVO[str]):
     UUID_VERSION = 4
     LENGTH = 36
 
-    def __init__(self, value: str):
+    def __init__(self, value: str, exc: Exception = InvalidIDError):
         if not isinstance(value, str):
-            raise InvalidIDError(f"ID must be string, got {type(value).__name__}")
+            raise exc(f"ID must be string, got {type(value).__name__}")
         value = value.strip()
         if not value:
-            raise InvalidIDError("ID must be a non-empty string")
+            raise exc("ID must be a non-empty string")
         try:
             uuid_obj = uuid.UUID(value, version=self.UUID_VERSION)
             value = str(uuid_obj)
         except Exception:
-            raise InvalidIDError(f"Invalid UUID v{self.UUID_VERSION} format: {value}")
+            raise exc(f"Invalid UUID v{self.UUID_VERSION} format: {value}")
 
         super().__init__(value)
 

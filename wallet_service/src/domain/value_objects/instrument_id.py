@@ -1,7 +1,9 @@
 from shared.id_vo import ID
+from src.exceptions import InvalidInstrumentIdError
 
 
 class InstrumentId(ID):
     """Represents the unique identifier of an Instrument."""
 
-    pass
+    def __init__(self, value):
+        super().__init__(value, InvalidInstrumentIdError)

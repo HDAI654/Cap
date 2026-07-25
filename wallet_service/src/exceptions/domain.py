@@ -5,6 +5,24 @@ class DomainError(Exception):
 
 
 # ======= VOs =======
+class InvalidInstrumentIdError(DomainError):
+    """Raised when a InstrumentId value is invalid or malformed."""
+
+    pass
+
+
+class InvalidTraderIdError(DomainError):
+    """Raised when a TraderId value is invalid or malformed."""
+
+    pass
+
+
+class InvalidWalletIdError(DomainError):
+    """Raised when a WalletId value is invalid or malformed."""
+
+    pass
+
+
 class InvalidQuantityError(DomainError):
     """Raised when a Quantity value is invalid or malformed."""
 
