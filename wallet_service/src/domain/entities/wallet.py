@@ -1,14 +1,14 @@
 from shared.entity import Entity
 from src.exceptions import CashBalanceNotFoundError, HoldingNotFoundError
-from wallet_service.src.domain.entities.cash_balance import CashBalance
-from wallet_service.src.domain.entities.holding import Holding
-from wallet_service.src.domain.value_objects.wallet_status import WalletStatus
-from wallet_service.src.domain.value_objects.currency import Currency
-from wallet_service.src.domain.value_objects.instrument_id import InstrumentId
-from wallet_service.src.domain.value_objects.money import Money
-from wallet_service.src.domain.value_objects.quantity import Quantity
-from wallet_service.src.domain.value_objects.trader_id import TraderId
-from wallet_service.src.domain.value_objects.wallet_id import WalletId
+from src.domain.entities.cash_balance import CashBalance
+from src.domain.entities.holding import Holding
+from src.domain.value_objects.wallet_status import WalletStatus
+from src.domain.value_objects.currency import Currency
+from src.domain.value_objects.instrument_id import InstrumentId
+from src.domain.value_objects.money import Money
+from src.domain.value_objects.quantity import Quantity
+from src.domain.value_objects.trader_id import TraderId
+from src.domain.value_objects.wallet_id import WalletId
 
 
 class Wallet(Entity):

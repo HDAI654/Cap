@@ -6,7 +6,7 @@ class Entity:
         return self.__str__()
 
     def __eq__(self, other) -> bool:
-        return self.__class__ is other.__class__ and self.id == other.id
+        return self.__class__ is other.__class__ and self.__dict__ == other.__dict__
 
     def __hash__(self) -> int:
         return hash((self.__class__, self.__dict__))
