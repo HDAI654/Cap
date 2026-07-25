@@ -9,4 +9,4 @@ class Entity:
         return self.__class__ is other.__class__ and self.id == other.id
 
     def __hash__(self) -> int:
-        return hash((self.__class__, self.id))
+        return hash((self.__class__, self.__dict__))
