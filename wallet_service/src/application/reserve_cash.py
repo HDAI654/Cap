@@ -8,22 +8,22 @@ from src.exceptions import InvalidCurrencyError
 
 
 @dataclass(frozen=True, slots=True)
-class WithdrawCashCommand:
-    """Input for the withdraw-cash use case."""
+class ReserveCashCommand:
+    """Input for the reserve-cash use case."""
 
     wallet_id: str
     amount: Decimal
     currency: str
 
 
-class WithdrawCashHandler:
-    """Application service that withdraws cash from a wallet."""
+class ReserveCashHandler:
+    """Application service that reserves cash in a wallet."""
 
     def __init__(self, uow: UnitOfWork) -> None:
         self._uow = uow
 
-    async def handle(self, command: WithdrawCashCommand) -> None:
-        """Withdraw cash from the given wallet."""
+    async def handle(self, command: ReserveCashCommand) -> None:
+        """Reserve cash in the given wallet."""
         wallet_id = WalletId(command.wallet_id)
         try:
             currency = Currency(command.currency)
@@ -34,6 +34,6 @@ class WithdrawCashHandler:
         async with self._uow:
             wallet = await self._uow.wallets.get_by_id(wallet_id)
 
-            wallet.withdraw_cash(money)
+            wallet.reserve_cash(money)
             await self._uow.wallets.update(wallet)
             await self._uow.commit()
