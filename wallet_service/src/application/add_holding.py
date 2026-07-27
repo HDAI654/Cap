@@ -32,12 +32,12 @@ class AddHoldingHandler:
         instrument_id = InstrumentId(command.instrument_id)
         quantity = Quantity(command.quantity)
         try:
-            average_cost_currency = command.average_cost_currency
+            average_cost_currency = Currency(command.average_cost_currency)
         except ValueError:
             raise InvalidCurrencyError("This currency is not supported")
         average_cost = Money(
             command.average_cost,
-            Currency(average_cost_currency),
+            average_cost_currency,
         )
 
         async with self._uow:
