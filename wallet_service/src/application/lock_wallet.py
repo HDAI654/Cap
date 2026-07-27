@@ -4,25 +4,25 @@ from src.domain.value_objects.wallet_id import WalletId
 
 
 @dataclass(frozen=True, slots=True)
-class ActivateWalletCommand:
-    """Input for the activate-wallet use case."""
+class LockWalletCommand:
+    """Input for the lock-wallet use case."""
 
     wallet_id: str
 
 
-class ActivateWalletHandler:
-    """Application service that activates a wallet."""
+class LockWalletHandler:
+    """Application service that locks a wallet."""
 
     def __init__(self, uow: UnitOfWork) -> None:
         self._uow = uow
 
-    async def handle(self, command: ActivateWalletCommand) -> None:
-        """Activate the given wallet."""
+    async def handle(self, command: LockWalletCommand) -> None:
+        """Lock the given wallet."""
         wallet_id = WalletId(command.wallet_id)
 
         async with self._uow:
             wallet = await self._uow.wallets.get_by_id(wallet_id)
 
-            wallet.activate()
+            wallet.lock()
             await self._uow.wallets.update(wallet)
             await self._uow.commit()
