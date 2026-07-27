@@ -46,3 +46,4 @@ class AddHoldingHandler:
             wallet.add_holding(instrument_id, quantity, average_cost)
             await self._uow.wallets.update(wallet)
             await self._uow.commit()
+            wallet.clear_changes()

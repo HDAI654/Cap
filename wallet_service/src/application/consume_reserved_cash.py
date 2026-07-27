@@ -37,3 +37,4 @@ class ConsumeReservedCashHandler:
             wallet.consume_reserved_cash(money)
             await self._uow.wallets.update(wallet)
             await self._uow.commit()
+            wallet.clear_changes()

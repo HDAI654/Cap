@@ -37,3 +37,4 @@ class ReserveCashHandler:
             wallet.reserve_cash(money)
             await self._uow.wallets.update(wallet)
             await self._uow.commit()
+            wallet.clear_changes()

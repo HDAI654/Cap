@@ -100,11 +100,15 @@ class Wallet(Entity):
     def release_cash(self, amount: Money) -> None:
         """Release reserved cash."""
 
+        self._require_active_wallet()
+
         self._require_cash_balance(amount.currency).release(amount)
         self._mark_cash_updated(amount.currency)
 
     def consume_reserved_cash(self, amount: Money) -> None:
         """Consume reserved cash after settlement."""
+
+        self._require_active_wallet()
 
         self._require_cash_balance(amount.currency).consume_reserved(amount)
         self._mark_cash_updated(amount.currency)
@@ -169,6 +173,7 @@ class Wallet(Entity):
         quantity: Quantity,
     ) -> None:
         """Release reserved shares."""
+        self._require_active_wallet()
 
         self._require_holding(instrument_id).release(quantity)
         self._mark_holding_updated(instrument_id)
@@ -179,24 +184,34 @@ class Wallet(Entity):
         quantity: Quantity,
     ) -> None:
         """Consume reserved shares after settlement."""
+        self._require_active_wallet()
 
-        self._require_holding(instrument_id).consume_reserved(quantity)
-        self._mark_holding_updated(instrument_id)
+        holding = self._require_holding(instrument_id)
+        holding.consume_reserved(quantity)
+
+        if holding.available.value + holding.reserved.value == 0:
+            self._holdings.pop(instrument_id)
+            self._mark_holding_removed(instrument_id)
+        else:
+            self._mark_holding_updated(instrument_id)
 
     def lock(self) -> None:
         """Lock the wallet."""
-        self.status = WalletStatus.LOCKED
-        self._status_changed = True
+        if self.status != WalletStatus.LOCKED:
+            self.status = WalletStatus.LOCKED
+            self._status_changed = True
 
     def activate(self) -> None:
         """Activate the wallet."""
-        self.status = WalletStatus.ACTIVE
-        self._status_changed = True
+        if self.status != WalletStatus.ACTIVE:
+            self.status = WalletStatus.ACTIVE
+            self._status_changed = True
 
     def close(self) -> None:
         """Close the wallet."""
-        self.status = WalletStatus.CLOSED
-        self._status_changed = True
+        if self.status != WalletStatus.CLOSED:
+            self.status = WalletStatus.CLOSED
+            self._status_changed = True
 
     def get_cash_changes(self) -> tuple[set[Currency], set[Currency]]:
         """Returns (created, updated) currencies."""

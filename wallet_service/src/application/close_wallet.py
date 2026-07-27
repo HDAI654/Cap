@@ -26,3 +26,4 @@ class CloseWalletHandler:
             wallet.close()
             await self._uow.wallets.update(wallet)
             await self._uow.commit()
+            wallet.clear_changes()

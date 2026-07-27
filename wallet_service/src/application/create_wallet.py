@@ -42,5 +42,6 @@ class CreateWalletHandler:
             wallet = WalletFactory.create(trader_id=trader_id)
             await self._uow.wallets.add(wallet)
             await self._uow.commit()
+            wallet.clear_changes()
 
             return CreateWalletResult(wallet_id=wallet.id.value)
