@@ -24,6 +24,8 @@ class LockWalletHandler:
             wallet = await self._uow.wallets.get_by_id(wallet_id)
 
             wallet.lock()
-            await self._uow.wallets.update(wallet)
-            await self._uow.commit()
-            wallet.clear_changes()
+
+            if wallet.is_changed():
+                await self._uow.wallets.update(wallet)
+                await self._uow.commit()
+                wallet.clear_changes()

@@ -233,6 +233,18 @@ class Wallet(Entity):
     def is_status_changed(self) -> bool:
         return self._status_changed
 
+    def is_changed(self) -> bool:
+        if (
+            self._status_changed == True
+            or len(self._created_cash) > 0
+            or len(self._updated_cash) > 0
+            or len(self._created_holdings) > 0
+            or len(self._updated_holdings) > 0
+            or len(self._removed_holdings) > 0
+        ):
+            return True
+        return False
+
     def clear_changes(self) -> None:
         """Call after successful persistence."""
         self._status_changed = False
