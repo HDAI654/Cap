@@ -34,7 +34,9 @@ class WalletRepository(ABC):
 
     @abstractmethod
     async def update(self, wallet: Wallet) -> None:
-        """Persist changes to a wallet."""
+        """Persist changes to a wallet.
+        Raises:
+            WalletNotFoundError: If no wallet exists for the given identifier."""
         raise NotImplementedError
 
     @abstractmethod
@@ -42,7 +44,9 @@ class WalletRepository(ABC):
         self,
         wallet_id: WalletId,
     ) -> None:
-        """Delete a wallet."""
+        """Delete a wallet.
+        Raises:
+            WalletNotFoundError: If no wallet exists for the given identifier."""
         raise NotImplementedError
 
     @abstractmethod
