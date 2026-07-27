@@ -114,3 +114,9 @@ class WalletDuplicateError(WalletException):
     """Wallet with same unique field exists"""
 
     pass
+
+
+class WalletNotActiveError(WalletException):
+    """Wallet is not active"""
+
+    pass

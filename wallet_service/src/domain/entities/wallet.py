@@ -1,5 +1,9 @@
 from shared.entity import Entity
-from src.exceptions import CashBalanceNotFoundError, HoldingNotFoundError
+from src.exceptions import (
+    CashBalanceNotFoundError,
+    HoldingNotFoundError,
+    WalletNotActiveError,
+)
 from src.domain.entities.cash_balance import CashBalance
 from src.domain.entities.holding import Holding
 from src.domain.value_objects.wallet_status import WalletStatus
@@ -62,6 +66,8 @@ class Wallet(Entity):
 
     def deposit_cash(self, amount: Money) -> None:
         """Deposit cash into the wallet."""
+        self._require_active_wallet()
+
         balance = self._get_cash_balance(amount.currency)
 
         if balance is None:
@@ -79,21 +85,27 @@ class Wallet(Entity):
 
     def withdraw_cash(self, amount: Money) -> None:
         """Withdraw cash from the wallet."""
+        self._require_active_wallet()
+
         self._require_cash_balance(amount.currency).withdraw(amount)
         self._mark_cash_updated(amount.currency)
 
     def reserve_cash(self, amount: Money) -> None:
         """Reserve cash for an order."""
+        self._require_active_wallet()
+
         self._require_cash_balance(amount.currency).reserve(amount)
         self._mark_cash_updated(amount.currency)
 
     def release_cash(self, amount: Money) -> None:
         """Release reserved cash."""
+
         self._require_cash_balance(amount.currency).release(amount)
         self._mark_cash_updated(amount.currency)
 
     def consume_reserved_cash(self, amount: Money) -> None:
         """Consume reserved cash after settlement."""
+
         self._require_cash_balance(amount.currency).consume_reserved(amount)
         self._mark_cash_updated(amount.currency)
 
@@ -104,6 +116,8 @@ class Wallet(Entity):
         average_cost: Money,
     ) -> None:
         """Add shares to a holding."""
+        self._require_active_wallet()
+
         holding = self._get_holding(instrument_id)
 
         if holding is None:
@@ -127,6 +141,8 @@ class Wallet(Entity):
         quantity: Quantity,
     ) -> None:
         """Remove shares from a holding."""
+        self._require_active_wallet()
+
         holding = self._require_holding(instrument_id)
         holding.remove(quantity)
 
@@ -142,6 +158,8 @@ class Wallet(Entity):
         quantity: Quantity,
     ) -> None:
         """Reserve shares."""
+        self._require_active_wallet()
+
         self._require_holding(instrument_id).reserve(quantity)
         self._mark_holding_updated(instrument_id)
 
@@ -151,6 +169,7 @@ class Wallet(Entity):
         quantity: Quantity,
     ) -> None:
         """Release reserved shares."""
+
         self._require_holding(instrument_id).release(quantity)
         self._mark_holding_updated(instrument_id)
 
@@ -160,6 +179,7 @@ class Wallet(Entity):
         quantity: Quantity,
     ) -> None:
         """Consume reserved shares after settlement."""
+
         self._require_holding(instrument_id).consume_reserved(quantity)
         self._mark_holding_updated(instrument_id)
 
@@ -265,3 +285,7 @@ class Wallet(Entity):
         else:
             self._removed_holdings.add(instrument_id)
         self._updated_holdings.discard(instrument_id)
+
+    def _require_active_wallet(self):
+        if self.status != WalletStatus.ACTIVE:
+            raise WalletNotActiveError("Wallet is not active.")
