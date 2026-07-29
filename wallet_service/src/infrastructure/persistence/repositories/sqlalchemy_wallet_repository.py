@@ -14,7 +14,7 @@ from src.infrastructure.persistence.mappers import (
     model_to_wallet,
     wallet_to_model,
 )
-from src.infrastructure.persistence.models.wallet import (
+from src.infrastructure.persistence.models import (
     CashBalanceModel,
     HoldingModel,
     WalletModel,

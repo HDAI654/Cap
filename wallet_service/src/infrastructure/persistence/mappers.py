@@ -8,7 +8,7 @@ from src.domain.value_objects.quantity import Quantity
 from src.domain.value_objects.trader_id import TraderId
 from src.domain.value_objects.wallet_id import WalletId
 from src.domain.value_objects.wallet_status import WalletStatus
-from src.infrastructure.persistence.models.wallet import (
+from src.infrastructure.persistence.models import (
     CashBalanceModel,
     HoldingModel,
     WalletModel,
