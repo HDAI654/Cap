@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from src.database import async_session_maker, engine
 from src.infrastructure.persistence.models import Base
-from src.presentation.api.v1.router import api_v1_router
+from src.presentation.api.v1 import api_v1_router
 
 
 @asynccontextmanager
