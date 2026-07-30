@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from src.domain.ports.unit_of_work import UnitOfWork
@@ -7,6 +8,8 @@ from src.domain.value_objects.money import Money
 from src.domain.value_objects.quantity import Quantity
 from src.domain.value_objects.wallet_id import WalletId
 from src.exceptions import InvalidCurrencyError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +31,13 @@ class AddHoldingHandler:
 
     async def handle(self, command: AddHoldingCommand) -> None:
         """Add shares to a holding in the given wallet."""
+        logger.info(
+            "Adding shares to a holding in the given wallet: wallet_id=%s, instrument_id=%s, quantity=%s",
+            command.wallet_id,
+            command.instrument_id,
+            command.quantity,
+        )
+
         wallet_id = WalletId(command.wallet_id)
         instrument_id = InstrumentId(command.instrument_id)
         quantity = Quantity(command.quantity)
@@ -47,3 +57,10 @@ class AddHoldingHandler:
             await self._uow.wallets.update(wallet)
             await self._uow.commit()
             wallet.clear_changes()
+
+        logger.info(
+            "Shares are added successfully: wallet_id=%s, instrument_id=%s, quantity=%s",
+            command.wallet_id,
+            command.instrument_id,
+            command.quantity,
+        )

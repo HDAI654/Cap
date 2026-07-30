@@ -1,7 +1,10 @@
+import logging
 from dataclasses import dataclass
 from src.domain.ports.unit_of_work import UnitOfWork
 from src.domain.value_objects.wallet_id import WalletId
 from src.application.DTOs import CashBalanceDTO, HoldingDTO, WalletDTO
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,10 +22,14 @@ class GetWalletHandler:
 
     async def handle(self, query: GetWalletQuery) -> WalletDTO:
         """Retrieve a wallet."""
+        logger.info("Retrieving wallet: wallet_id=%s", query.wallet_id)
+
         wallet_id = WalletId(query.wallet_id)
 
         async with self._uow:
             wallet = await self._uow.wallets.get_by_id(wallet_id)
+
+            logger.info("Wallet retrieved successfully: wallet_id=%s", query.wallet_id)
 
             return WalletDTO(
                 wallet_id=wallet.id.value,

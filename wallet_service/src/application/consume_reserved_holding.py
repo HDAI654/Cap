@@ -1,9 +1,12 @@
+import logging
 from dataclasses import dataclass
 from src.domain.ports.unit_of_work import UnitOfWork
 from src.domain.value_objects.instrument_id import InstrumentId
 from src.domain.value_objects.quantity import Quantity
 from src.domain.value_objects.wallet_id import WalletId
 from src.exceptions import WalletNotFoundError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +26,14 @@ class ConsumeReservedHoldingHandler:
 
     async def handle(self, command: ConsumeReservedHoldingCommand) -> None:
         """Consume reserved shares in a holding of the given wallet."""
+
+        logger.info(
+            "Consuming reserved holding: wallet_id=%s, instrument_id=%s, quantity=%s",
+            command.wallet_id,
+            command.instrument_id,
+            command.quantity,
+        )
+
         wallet_id = WalletId(command.wallet_id)
         instrument_id = InstrumentId(command.instrument_id)
         quantity = Quantity(command.quantity)
@@ -34,3 +45,10 @@ class ConsumeReservedHoldingHandler:
             await self._uow.wallets.update(wallet)
             await self._uow.commit()
             wallet.clear_changes()
+
+        logger.info(
+            "Reserved holding consumed successfully: wallet_id=%s, instrument_id=%s, quantity=%s",
+            command.wallet_id,
+            command.instrument_id,
+            command.quantity,
+        )

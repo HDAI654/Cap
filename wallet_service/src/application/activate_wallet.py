@@ -1,6 +1,9 @@
+import logging
 from dataclasses import dataclass
 from src.domain.ports.unit_of_work import UnitOfWork
 from src.domain.value_objects.wallet_id import WalletId
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +21,8 @@ class ActivateWalletHandler:
 
     async def handle(self, command: ActivateWalletCommand) -> None:
         """Activate the given wallet."""
+        logger.info("Activating wallet: wallet_id=%s", command.wallet_id)
+
         wallet_id = WalletId(command.wallet_id)
 
         async with self._uow:
@@ -29,3 +34,5 @@ class ActivateWalletHandler:
                 await self._uow.wallets.update(wallet)
                 await self._uow.commit()
                 wallet.clear_changes()
+
+        logger.info("Wallet activated successfully: wallet_id=%s", command.wallet_id)

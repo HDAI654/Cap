@@ -1,8 +1,11 @@
+import logging
 from dataclasses import dataclass
 from src.domain.factories.wallet_factory import WalletFactory
 from src.domain.ports.unit_of_work import UnitOfWork
 from src.domain.value_objects.trader_id import TraderId
 from src.exceptions import WalletAlreadyExistsError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +34,9 @@ class CreateWalletHandler:
         Raises:
             WalletAlreadyExistsError: If a wallet already exists for the trader.
         """
+
+        logger.info("Creating wallet for trader: trader_id=%s", command.trader_id)
+
         trader_id = TraderId(command.trader_id)
 
         async with self._uow:
@@ -43,5 +49,7 @@ class CreateWalletHandler:
             await self._uow.wallets.add(wallet)
             await self._uow.commit()
             wallet.clear_changes()
+
+            logger.info("Wallet created successfully: wallet_id=%s", wallet.id.value)
 
             return CreateWalletResult(wallet_id=wallet.id.value)

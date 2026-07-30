@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from src.domain.ports.unit_of_work import UnitOfWork
@@ -5,6 +6,8 @@ from src.domain.value_objects.currency import Currency
 from src.domain.value_objects.money import Money
 from src.domain.value_objects.wallet_id import WalletId
 from src.exceptions import InvalidCurrencyError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +27,12 @@ class ConsumeReservedCashHandler:
 
     async def handle(self, command: ConsumeReservedCashCommand) -> None:
         """Consume reserved cash in the given wallet."""
+        logger.info(
+            "Consuming reserved cash in the given wallet: wallet_id=%s, amount=%s, currency=%s",
+            command.wallet_id,
+            command.amount,
+            command.currency,
+        )
         wallet_id = WalletId(command.wallet_id)
         try:
             currency = Currency(command.currency)
@@ -38,3 +47,10 @@ class ConsumeReservedCashHandler:
             await self._uow.wallets.update(wallet)
             await self._uow.commit()
             wallet.clear_changes()
+
+        logger.info(
+            "Reserved cash consumed successfully: wallet_id=%s, amount=%s, currency=%s",
+            command.wallet_id,
+            command.amount,
+            command.currency,
+        )
