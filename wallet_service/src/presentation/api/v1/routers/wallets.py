@@ -105,6 +105,7 @@ async def create_wallet(
     uow_factory: UoWFactory,
 ) -> CreateWalletResponse:
     """Create a new wallet for a trader."""
+    logger.info("Creating wallet: trader_id=%s", body.trader_id)
     handler = CreateWalletHandler(uow_factory())
     try:
         result = await handler.handle(
@@ -137,6 +138,7 @@ async def create_wallet(
             detail="An unexpected error occurred.",
         )
 
+    logger.info("Wallet created: wallet_id=%s", result.wallet_id)
     return CreateWalletResponse(wallet_id=result.wallet_id)
 
 
@@ -151,6 +153,7 @@ async def get_wallet(
     uow_factory: UoWFactory,
 ) -> WalletResponse:
     """Retrieve a wallet by identifier, including cash balances and holdings."""
+    logger.info("Retrieving wallet: wallet_id=%s", wallet_id)
     handler = GetWalletHandler(uow_factory())
     try:
         dto = await handler.handle(GetWalletQuery(wallet_id=wallet_id))
@@ -181,6 +184,7 @@ async def get_wallet(
             detail="An unexpected error occurred.",
         )
 
+    logger.info("Wallet retrieved: wallet_id=%s, status=%s", dto.wallet_id, dto.status)
     return WalletResponse(
         wallet_id=dto.wallet_id,
         trader_id=dto.trader_id,
@@ -216,6 +220,7 @@ async def lock_wallet(
     uow_factory: UoWFactory,
 ) -> Response:
     """Transition the wallet to LOCKED status."""
+    logger.info("Locking wallet: wallet_id=%s", wallet_id)
     handler = LockWalletHandler(uow_factory())
     try:
         await handler.handle(LockWalletCommand(wallet_id=wallet_id))
@@ -246,6 +251,7 @@ async def lock_wallet(
             detail="An unexpected error occurred.",
         )
 
+    logger.info("Wallet locked: wallet_id=%s", wallet_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -259,6 +265,7 @@ async def activate_wallet(
     uow_factory: UoWFactory,
 ) -> Response:
     """Transition the wallet to ACTIVE status."""
+    logger.info("Activating wallet: wallet_id=%s", wallet_id)
     handler = ActivateWalletHandler(uow_factory())
     try:
         await handler.handle(ActivateWalletCommand(wallet_id=wallet_id))
@@ -289,6 +296,7 @@ async def activate_wallet(
             detail="An unexpected error occurred.",
         )
 
+    logger.info("Wallet activated: wallet_id=%s", wallet_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -302,6 +310,7 @@ async def close_wallet(
     uow_factory: UoWFactory,
 ) -> Response:
     """Transition the wallet to CLOSED status."""
+    logger.info("Closing wallet: wallet_id=%s", wallet_id)
     handler = CloseWalletHandler(uow_factory())
     try:
         await handler.handle(CloseWalletCommand(wallet_id=wallet_id))
@@ -332,6 +341,7 @@ async def close_wallet(
             detail="An unexpected error occurred.",
         )
 
+    logger.info("Wallet closed: wallet_id=%s", wallet_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -351,6 +361,12 @@ async def deposit_cash(
     uow_factory: UoWFactory,
 ) -> Response:
     """Deposit available cash into the wallet."""
+    logger.info(
+        "Depositing cash: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     handler = DepositCashHandler(uow_factory())
     try:
         await handler.handle(
@@ -397,6 +413,12 @@ async def deposit_cash(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Cash deposited: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -411,6 +433,12 @@ async def withdraw_cash(
     uow_factory: UoWFactory,
 ) -> Response:
     """Withdraw available cash from the wallet."""
+    logger.info(
+        "Withdrawing cash: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     handler = WithdrawCashHandler(uow_factory())
     try:
         await handler.handle(
@@ -457,6 +485,12 @@ async def withdraw_cash(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Cash withdrawn: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -471,6 +505,12 @@ async def reserve_cash(
     uow_factory: UoWFactory,
 ) -> Response:
     """Reserve available cash for an order."""
+    logger.info(
+        "Reserving cash: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     handler = ReserveCashHandler(uow_factory())
     try:
         await handler.handle(
@@ -517,6 +557,12 @@ async def reserve_cash(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Cash reserved: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -531,6 +577,12 @@ async def release_cash(
     uow_factory: UoWFactory,
 ) -> Response:
     """Release previously reserved cash back to available."""
+    logger.info(
+        "Releasing reserved cash: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     handler = ReleaseCashHandler(uow_factory())
     try:
         await handler.handle(
@@ -577,6 +629,12 @@ async def release_cash(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Reserved cash released: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -591,6 +649,12 @@ async def consume_reserved_cash(
     uow_factory: UoWFactory,
 ) -> Response:
     """Permanently consume reserved cash after settlement."""
+    logger.info(
+        "Consuming reserved cash: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     handler = ConsumeReservedCashHandler(uow_factory())
     try:
         await handler.handle(
@@ -637,6 +701,12 @@ async def consume_reserved_cash(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Reserved cash consumed: wallet_id=%s, amount=%s, currency=%s",
+        wallet_id,
+        body.amount,
+        body.currency,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -656,6 +726,14 @@ async def add_holding(
     uow_factory: UoWFactory,
 ) -> Response:
     """Add shares to a holding (creates the holding if needed)."""
+    logger.info(
+        "Adding holding: wallet_id=%s, instrument_id=%s, quantity=%s, avg_cost=%s %s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+        body.average_cost,
+        body.average_cost_currency,
+    )
     handler = AddHoldingHandler(uow_factory())
     try:
         await handler.handle(
@@ -706,6 +784,12 @@ async def add_holding(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Holding added: wallet_id=%s, instrument_id=%s, quantity=%s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -720,6 +804,12 @@ async def remove_holding(
     uow_factory: UoWFactory,
 ) -> Response:
     """Remove available shares from a holding."""
+    logger.info(
+        "Removing holding: wallet_id=%s, instrument_id=%s, quantity=%s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+    )
     handler = RemoveHoldingHandler(uow_factory())
     try:
         await handler.handle(
@@ -765,6 +855,12 @@ async def remove_holding(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Holding removed: wallet_id=%s, instrument_id=%s, quantity=%s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -779,6 +875,12 @@ async def reserve_holding(
     uow_factory: UoWFactory,
 ) -> Response:
     """Reserve available shares for an order."""
+    logger.info(
+        "Reserving holding: wallet_id=%s, instrument_id=%s, quantity=%s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+    )
     handler = ReserveHoldingHandler(uow_factory())
     try:
         await handler.handle(
@@ -824,6 +926,12 @@ async def reserve_holding(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Holding reserved: wallet_id=%s, instrument_id=%s, quantity=%s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -838,6 +946,12 @@ async def release_holding(
     uow_factory: UoWFactory,
 ) -> Response:
     """Release previously reserved shares back to available."""
+    logger.info(
+        "Releasing holding: wallet_id=%s, instrument_id=%s, quantity=%s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+    )
     handler = ReleaseHoldingHandler(uow_factory())
     try:
         await handler.handle(
@@ -883,6 +997,12 @@ async def release_holding(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Holding released: wallet_id=%s, instrument_id=%s, quantity=%s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -897,6 +1017,12 @@ async def consume_reserved_holding(
     uow_factory: UoWFactory,
 ) -> Response:
     """Permanently consume reserved shares after settlement."""
+    logger.info(
+        "Consuming reserved holding: wallet_id=%s, instrument_id=%s, quantity=%s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+    )
     handler = ConsumeReservedHoldingHandler(uow_factory())
     try:
         await handler.handle(
@@ -942,4 +1068,10 @@ async def consume_reserved_holding(
             detail="An unexpected error occurred.",
         )
 
+    logger.info(
+        "Reserved holding consumed: wallet_id=%s, instrument_id=%s, quantity=%s",
+        wallet_id,
+        body.instrument_id,
+        body.quantity,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
