@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import StaticPool
 from src.infrastructure.persistence.models import Base
 from src.presentation.api.v1.router import api_v1_router
-from src.presentation.exception_handlers import register_exception_handlers
 
 
 def create_app(
@@ -46,6 +45,5 @@ def create_app(
     )
     app.state.engine = engine
     app.state.session_factory = session_factory
-    register_exception_handlers(app)
     app.include_router(api_v1_router)
     return app

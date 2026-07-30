@@ -1,5 +1,8 @@
+import logging
 from typing import Annotated
-from fastapi import APIRouter, Path, Response, status
+from fastapi import APIRouter, Path, Response, status, HTTPException
+
+# handlers & commands
 from src.application.activate_wallet import (
     ActivateWalletCommand,
     ActivateWalletHandler,
@@ -39,6 +42,7 @@ from src.application.withdraw_cash import (
     WithdrawCashCommand,
     WithdrawCashHandler,
 )
+
 from src.presentation.dependencies import UoWFactory
 from src.presentation.api.v1.schemas.requests import (
     AddHoldingRequest,
@@ -50,6 +54,27 @@ from src.presentation.api.v1.schemas.responses import (
     CreateWalletResponse,
     WalletResponse,
 )
+
+# Exceptions
+from src.exceptions import (
+    DatabaseConnectionError,
+    DatabaseOperationError,
+    DatabaseTimeoutError,
+    WalletNotFoundError,
+    WalletAlreadyExistsError,
+    InvalidTraderIdError,
+    InvalidWalletIdError,
+    WalletNotActiveError,
+    InvalidCurrencyError,
+    InvalidMoneyAmountError,
+    CurrencyMismatchError,
+    CashBalanceNotFoundError,
+    InvalidInstrumentIdError,
+    InvalidQuantityError,
+    HoldingNotFoundError,
+)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/wallets", tags=["wallets"])
 
@@ -79,14 +104,39 @@ async def create_wallet(
     body: CreateWalletRequest,
     uow_factory: UoWFactory,
 ) -> CreateWalletResponse:
-    """Create a new wallet for a trader.
-
-    Returns 409 if a wallet already exists for the trader.
-    """
+    """Create a new wallet for a trader."""
     handler = CreateWalletHandler(uow_factory())
-    result = await handler.handle(
-        CreateWalletCommand(trader_id=body.trader_id),
-    )
+    try:
+        result = await handler.handle(
+            CreateWalletCommand(trader_id=body.trader_id),
+        )
+    except WalletAlreadyExistsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet already exists.",
+        )
+    except InvalidTraderIdError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid trader id.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while creating wallet")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return CreateWalletResponse(wallet_id=result.wallet_id)
 
 
@@ -102,7 +152,35 @@ async def get_wallet(
 ) -> WalletResponse:
     """Retrieve a wallet by identifier, including cash balances and holdings."""
     handler = GetWalletHandler(uow_factory())
-    dto = await handler.handle(GetWalletQuery(wallet_id=wallet_id))
+    try:
+        dto = await handler.handle(GetWalletQuery(wallet_id=wallet_id))
+    except WalletNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet not found.",
+        )
+    except InvalidWalletIdError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid wallet id.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while retrieving wallet")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return WalletResponse(
         wallet_id=dto.wallet_id,
         trader_id=dto.trader_id,
@@ -139,7 +217,35 @@ async def lock_wallet(
 ) -> Response:
     """Transition the wallet to LOCKED status."""
     handler = LockWalletHandler(uow_factory())
-    await handler.handle(LockWalletCommand(wallet_id=wallet_id))
+    try:
+        await handler.handle(LockWalletCommand(wallet_id=wallet_id))
+    except WalletNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet not found.",
+        )
+    except InvalidWalletIdError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid wallet id.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while locking wallet")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -154,7 +260,35 @@ async def activate_wallet(
 ) -> Response:
     """Transition the wallet to ACTIVE status."""
     handler = ActivateWalletHandler(uow_factory())
-    await handler.handle(ActivateWalletCommand(wallet_id=wallet_id))
+    try:
+        await handler.handle(ActivateWalletCommand(wallet_id=wallet_id))
+    except WalletNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet not found.",
+        )
+    except InvalidWalletIdError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid wallet id.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while activating wallet")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -169,7 +303,35 @@ async def close_wallet(
 ) -> Response:
     """Transition the wallet to CLOSED status."""
     handler = CloseWalletHandler(uow_factory())
-    await handler.handle(CloseWalletCommand(wallet_id=wallet_id))
+    try:
+        await handler.handle(CloseWalletCommand(wallet_id=wallet_id))
+    except WalletNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet not found.",
+        )
+    except InvalidWalletIdError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid wallet id.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while closing wallet")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -190,13 +352,51 @@ async def deposit_cash(
 ) -> Response:
     """Deposit available cash into the wallet."""
     handler = DepositCashHandler(uow_factory())
-    await handler.handle(
-        DepositCashCommand(
-            wallet_id=wallet_id,
-            amount=body.amount,
-            currency=body.currency,
-        ),
-    )
+    try:
+        await handler.handle(
+            DepositCashCommand(
+                wallet_id=wallet_id,
+                amount=body.amount,
+                currency=body.currency,
+            ),
+        )
+    except WalletNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidCurrencyError,
+        InvalidMoneyAmountError,
+        CurrencyMismatchError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while depositing cash")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -212,13 +412,51 @@ async def withdraw_cash(
 ) -> Response:
     """Withdraw available cash from the wallet."""
     handler = WithdrawCashHandler(uow_factory())
-    await handler.handle(
-        WithdrawCashCommand(
-            wallet_id=wallet_id,
-            amount=body.amount,
-            currency=body.currency,
-        ),
-    )
+    try:
+        await handler.handle(
+            WithdrawCashCommand(
+                wallet_id=wallet_id,
+                amount=body.amount,
+                currency=body.currency,
+            ),
+        )
+    except (WalletNotFoundError, CashBalanceNotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet or cash balance not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidCurrencyError,
+        InvalidMoneyAmountError,
+        CurrencyMismatchError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while withdrawing cash")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -234,13 +472,51 @@ async def reserve_cash(
 ) -> Response:
     """Reserve available cash for an order."""
     handler = ReserveCashHandler(uow_factory())
-    await handler.handle(
-        ReserveCashCommand(
-            wallet_id=wallet_id,
-            amount=body.amount,
-            currency=body.currency,
-        ),
-    )
+    try:
+        await handler.handle(
+            ReserveCashCommand(
+                wallet_id=wallet_id,
+                amount=body.amount,
+                currency=body.currency,
+            ),
+        )
+    except (WalletNotFoundError, CashBalanceNotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet or cash balance not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidCurrencyError,
+        InvalidMoneyAmountError,
+        CurrencyMismatchError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while reserving cash")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -256,13 +532,51 @@ async def release_cash(
 ) -> Response:
     """Release previously reserved cash back to available."""
     handler = ReleaseCashHandler(uow_factory())
-    await handler.handle(
-        ReleaseCashCommand(
-            wallet_id=wallet_id,
-            amount=body.amount,
-            currency=body.currency,
-        ),
-    )
+    try:
+        await handler.handle(
+            ReleaseCashCommand(
+                wallet_id=wallet_id,
+                amount=body.amount,
+                currency=body.currency,
+            ),
+        )
+    except (WalletNotFoundError, CashBalanceNotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet or cash balance not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidCurrencyError,
+        InvalidMoneyAmountError,
+        CurrencyMismatchError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while releasing cash")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -278,13 +592,51 @@ async def consume_reserved_cash(
 ) -> Response:
     """Permanently consume reserved cash after settlement."""
     handler = ConsumeReservedCashHandler(uow_factory())
-    await handler.handle(
-        ConsumeReservedCashCommand(
-            wallet_id=wallet_id,
-            amount=body.amount,
-            currency=body.currency,
-        ),
-    )
+    try:
+        await handler.handle(
+            ConsumeReservedCashCommand(
+                wallet_id=wallet_id,
+                amount=body.amount,
+                currency=body.currency,
+            ),
+        )
+    except (WalletNotFoundError, CashBalanceNotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet or cash balance not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidCurrencyError,
+        InvalidMoneyAmountError,
+        CurrencyMismatchError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while consuming reserved cash")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -305,15 +657,55 @@ async def add_holding(
 ) -> Response:
     """Add shares to a holding (creates the holding if needed)."""
     handler = AddHoldingHandler(uow_factory())
-    await handler.handle(
-        AddHoldingCommand(
-            wallet_id=wallet_id,
-            instrument_id=body.instrument_id,
-            quantity=body.quantity,
-            average_cost=body.average_cost,
-            average_cost_currency=body.average_cost_currency,
-        ),
-    )
+    try:
+        await handler.handle(
+            AddHoldingCommand(
+                wallet_id=wallet_id,
+                instrument_id=body.instrument_id,
+                quantity=body.quantity,
+                average_cost=body.average_cost,
+                average_cost_currency=body.average_cost_currency,
+            ),
+        )
+    except WalletNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidInstrumentIdError,
+        InvalidQuantityError,
+        InvalidCurrencyError,
+        InvalidMoneyAmountError,
+        CurrencyMismatchError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while adding holding")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -329,13 +721,50 @@ async def remove_holding(
 ) -> Response:
     """Remove available shares from a holding."""
     handler = RemoveHoldingHandler(uow_factory())
-    await handler.handle(
-        RemoveHoldingCommand(
-            wallet_id=wallet_id,
-            instrument_id=body.instrument_id,
-            quantity=body.quantity,
-        ),
-    )
+    try:
+        await handler.handle(
+            RemoveHoldingCommand(
+                wallet_id=wallet_id,
+                instrument_id=body.instrument_id,
+                quantity=body.quantity,
+            ),
+        )
+    except (WalletNotFoundError, HoldingNotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet or holding not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidInstrumentIdError,
+        InvalidQuantityError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while removing holding")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -351,13 +780,50 @@ async def reserve_holding(
 ) -> Response:
     """Reserve available shares for an order."""
     handler = ReserveHoldingHandler(uow_factory())
-    await handler.handle(
-        ReserveHoldingCommand(
-            wallet_id=wallet_id,
-            instrument_id=body.instrument_id,
-            quantity=body.quantity,
-        ),
-    )
+    try:
+        await handler.handle(
+            ReserveHoldingCommand(
+                wallet_id=wallet_id,
+                instrument_id=body.instrument_id,
+                quantity=body.quantity,
+            ),
+        )
+    except (WalletNotFoundError, HoldingNotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet or holding not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidInstrumentIdError,
+        InvalidQuantityError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while reserving holding")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -373,13 +839,50 @@ async def release_holding(
 ) -> Response:
     """Release previously reserved shares back to available."""
     handler = ReleaseHoldingHandler(uow_factory())
-    await handler.handle(
-        ReleaseHoldingCommand(
-            wallet_id=wallet_id,
-            instrument_id=body.instrument_id,
-            quantity=body.quantity,
-        ),
-    )
+    try:
+        await handler.handle(
+            ReleaseHoldingCommand(
+                wallet_id=wallet_id,
+                instrument_id=body.instrument_id,
+                quantity=body.quantity,
+            ),
+        )
+    except (WalletNotFoundError, HoldingNotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet or holding not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidInstrumentIdError,
+        InvalidQuantityError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while releasing holding")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -395,11 +898,48 @@ async def consume_reserved_holding(
 ) -> Response:
     """Permanently consume reserved shares after settlement."""
     handler = ConsumeReservedHoldingHandler(uow_factory())
-    await handler.handle(
-        ConsumeReservedHoldingCommand(
-            wallet_id=wallet_id,
-            instrument_id=body.instrument_id,
-            quantity=body.quantity,
-        ),
-    )
+    try:
+        await handler.handle(
+            ConsumeReservedHoldingCommand(
+                wallet_id=wallet_id,
+                instrument_id=body.instrument_id,
+                quantity=body.quantity,
+            ),
+        )
+    except (WalletNotFoundError, HoldingNotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet or holding not found.",
+        )
+    except WalletNotActiveError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc) or "Wallet is not active.",
+        )
+    except (
+        InvalidWalletIdError,
+        InvalidInstrumentIdError,
+        InvalidQuantityError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc) or "Invalid request data.",
+        )
+    except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Database temporarily unavailable.",
+        )
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc) or "Database operation failed.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while consuming reserved holding")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
