@@ -15,3 +15,9 @@ class InvalidTraderIdError(DomainError):
     """Raised when a TraderId value is invalid or malformed."""
 
     pass
+
+
+class InvalidInstrumentIdError(DomainError):
+    """Raised when an InstrumentId value is invalid or malformed."""
+
+    pass
