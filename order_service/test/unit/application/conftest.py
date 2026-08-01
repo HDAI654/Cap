@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.domain.entities.order import Order
+from src.domain.ports.event_publisher import EventPublisher
 from src.domain.ports.order_repository import OrderRepository
 from src.domain.ports.unit_of_work import UnitOfWork
 from src.domain.value_objects.currency import Currency
@@ -40,6 +41,13 @@ def mock_uow(mock_order_repository: AsyncMock) -> AsyncMock:
     uow.__aenter__ = AsyncMock(return_value=uow)
     uow.__aexit__ = AsyncMock(return_value=None)
     return uow
+
+
+@pytest.fixture
+def mock_event_publisher() -> AsyncMock:
+    publisher = AsyncMock(spec=EventPublisher)
+    publisher.publish = AsyncMock()
+    return publisher
 
 
 # ---------------------------------------------------------------------------
