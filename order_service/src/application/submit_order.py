@@ -2,7 +2,9 @@ import logging
 from dataclasses import dataclass
 from decimal import Decimal
 
+from src.domain.events.order_events import OrderSubmitted
 from src.domain.factories.order_factory import OrderFactory
+from src.domain.ports.event_publisher import EventPublisher
 from src.domain.ports.unit_of_work import UnitOfWork
 from src.domain.value_objects.currency import Currency
 from src.domain.value_objects.idempotency_key import IdempotencyKey
@@ -43,11 +45,16 @@ class SubmitOrderResult:
 class SubmitOrderHandler:
     """Application service that submits a new order."""
 
-    def __init__(self, uow: UnitOfWork) -> None:
+    def __init__(
+        self,
+        uow: UnitOfWork,
+        event_publisher: EventPublisher,
+    ) -> None:
         self._uow = uow
+        self._event_publisher = event_publisher
 
     async def handle(self, command: SubmitOrderCommand) -> SubmitOrderResult:
-        """Submit a new order.
+        """Submit a new order and publish OrderSubmitted.
 
         Raises:
             OrderAlreadyExistsError: If an order already exists for the
@@ -104,9 +111,27 @@ class SubmitOrderHandler:
             await self._uow.commit()
             order.clear_changes()
 
-            logger.info("Order submitted successfully: order_id=%s", order.id.value)
+        limit = order.limit_price
+        await self._event_publisher.publish(
+            OrderSubmitted(
+                order_id=order.id.value,
+                trader_id=order.trader_id.value,
+                instrument_id=order.instrument_id.value,
+                side=order.side.value,
+                order_type=order.order_type.value,
+                time_in_force=order.time_in_force.value,
+                quantity=order.quantity.value,
+                limit_price=limit.amount if limit is not None else None,
+                limit_price_currency=(
+                    limit.currency.value if limit is not None else None
+                ),
+                idempotency_key=order.idempotency_key.value,
+            )
+        )
 
-            return SubmitOrderResult(order_id=order.id.value)
+        logger.info("Order submitted successfully: order_id=%s", order.id.value)
+
+        return SubmitOrderResult(order_id=order.id.value)
 
     @staticmethod
     def _parse_side(value: str) -> OrderSide:
@@ -138,6 +163,10 @@ class SubmitOrderHandler:
         order_type: OrderType,
     ) -> Money | None:
         if order_type is OrderType.MARKET:
+            if amount is not None or currency_code is not None:
+                raise InvalidOrderParametersError(
+                    "MARKET orders must not specify a limit price."
+                )
             return None
 
         if amount is None or currency_code is None:
