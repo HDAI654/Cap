@@ -63,3 +63,40 @@ class InvalidIdempotencyKeyError(DomainError):
     """Raised when an IdempotencyKey value is invalid or malformed."""
 
     pass
+
+
+# ======= Order Exceptions =======
+class OrderException(DomainError):
+    """Base Order error."""
+
+    pass
+
+
+class OrderNotFoundError(OrderException):
+    """Order not found."""
+
+    pass
+
+
+class OrderDuplicateError(OrderException):
+    """Order with same unique field exists."""
+
+    pass
+
+
+class InvalidOrderStateError(OrderException):
+    """Order is not in a valid state for the requested operation."""
+
+    pass
+
+
+class InvalidOrderFillError(OrderException):
+    """Fill quantity or price is invalid for the order."""
+
+    pass
+
+
+class InvalidOrderParametersError(OrderException):
+    """Order creation parameters violate domain rules."""
+
+    pass
