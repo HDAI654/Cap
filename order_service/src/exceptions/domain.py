@@ -57,3 +57,9 @@ class QuantityOperationError(DomainError):
     """Raised when a quantity operation receives an unsupported operand type."""
 
     pass
+
+
+class InvalidIdempotencyKeyError(DomainError):
+    """Raised when an IdempotencyKey value is invalid or malformed."""
+
+    pass
