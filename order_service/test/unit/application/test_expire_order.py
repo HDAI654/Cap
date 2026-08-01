@@ -32,9 +32,7 @@ async def test_expires_partially_filled_order(
     mock_order_repository.get_by_id.return_value = partially_filled_order
 
     handler = ExpireOrderHandler(mock_uow)
-    await handler.handle(
-        ExpireOrderCommand(order_id=partially_filled_order.id.value)
-    )
+    await handler.handle(ExpireOrderCommand(order_id=partially_filled_order.id.value))
 
     assert partially_filled_order.status is OrderStatus.EXPIRED
     assert partially_filled_order.filled_quantity == Quantity(40)
@@ -51,9 +49,7 @@ async def test_raises_when_still_new(
     handler = ExpireOrderHandler(mock_uow)
 
     with pytest.raises(InvalidOrderStateError):
-        await handler.handle(
-            ExpireOrderCommand(order_id=new_limit_order.id.value)
-        )
+        await handler.handle(ExpireOrderCommand(order_id=new_limit_order.id.value))
 
     mock_order_repository.update.assert_not_awaited()
     mock_uow.commit.assert_not_awaited()

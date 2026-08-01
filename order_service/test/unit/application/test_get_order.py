@@ -15,9 +15,7 @@ async def test_returns_order_dto(
     mock_order_repository.get_by_id.return_value = new_limit_order
 
     handler = GetOrderHandler(mock_uow)
-    result = await handler.handle(
-        GetOrderQuery(order_id=new_limit_order.id.value)
-    )
+    result = await handler.handle(GetOrderQuery(order_id=new_limit_order.id.value))
 
     assert isinstance(result, OrderDTO)
     assert result.order_id == new_limit_order.id.value
@@ -44,9 +42,7 @@ async def test_returns_market_order_without_price(
     mock_order_repository.get_by_id.return_value = new_market_order
 
     handler = GetOrderHandler(mock_uow)
-    result = await handler.handle(
-        GetOrderQuery(order_id=new_market_order.id.value)
-    )
+    result = await handler.handle(GetOrderQuery(order_id=new_market_order.id.value))
 
     assert result.order_type == "MARKET"
     assert result.limit_price is None

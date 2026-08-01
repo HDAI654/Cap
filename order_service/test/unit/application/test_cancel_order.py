@@ -46,9 +46,7 @@ async def test_cancels_partially_filled_order(
     mock_order_repository.get_by_id.return_value = partially_filled_order
 
     handler = CancelOrderHandler(mock_uow)
-    await handler.handle(
-        CancelOrderCommand(order_id=partially_filled_order.id.value)
-    )
+    await handler.handle(CancelOrderCommand(order_id=partially_filled_order.id.value))
 
     assert partially_filled_order.status is OrderStatus.CANCELLED
     assert partially_filled_order.filled_quantity == Quantity(40)
