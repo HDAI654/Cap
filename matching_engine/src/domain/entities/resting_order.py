@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-
 from src.domain.value_objects.instrument_id import InstrumentId
 from src.domain.value_objects.money import Money
 from src.domain.value_objects.order_id import OrderId

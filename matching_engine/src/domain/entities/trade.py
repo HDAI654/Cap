@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
-
 from shared.entity import Entity
 from src.domain.value_objects.instrument_id import InstrumentId
 from src.domain.value_objects.money import Money

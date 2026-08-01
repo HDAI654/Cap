@@ -2,7 +2,6 @@ from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from decimal import Decimal
-
 from src.domain.entities.resting_order import RestingOrder
 from src.domain.entities.trade import Trade
 from src.domain.value_objects.instrument_id import InstrumentId
