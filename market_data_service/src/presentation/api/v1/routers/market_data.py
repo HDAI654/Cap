@@ -43,9 +43,7 @@ async def get_order_book(
 ) -> OrderBookResponse:
     handler = GetOrderBookHandler(reader)
     try:
-        snapshot = await handler.handle(
-            GetOrderBookQuery(instrument_id=instrument_id)
-        )
+        snapshot = await handler.handle(GetOrderBookQuery(instrument_id=instrument_id))
     except MarketDataNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
     except InvalidInstrumentIdError as exc:
@@ -94,9 +92,7 @@ async def get_last_trade_price(
 ) -> LastTradePriceResponse:
     handler = GetLastTradePriceHandler(reader)
     try:
-        ltp = await handler.handle(
-            GetLastTradePriceQuery(instrument_id=instrument_id)
-        )
+        ltp = await handler.handle(GetLastTradePriceQuery(instrument_id=instrument_id))
     except MarketDataNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
     except InvalidInstrumentIdError as exc:
