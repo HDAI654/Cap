@@ -38,3 +38,8 @@ print_green_banner "Running admin_service tests"
 sh run_tests.sh admin_service test/
 print_green_banner "admin_service tests finished successfully"
 print_green_banner ""
+
+print_green_banner "Running market_data_service tests"
+sh run_tests.sh market_data_service test/
+print_green_banner "market_data_service tests finished successfully"
+print_green_banner ""
