@@ -2,8 +2,6 @@
 
 set -e
 
-echo "========== Starting CI: running tests... =========="
-
 # Step 1: Set base project root and PYTHONPATH
 PROJECT_ROOT=$(cd "$(dirname "$0")" && pwd)
 export PYTHONPATH=$PYTHONPATH:$PROJECT_ROOT
@@ -44,5 +42,3 @@ echo "PYTHONPATH: $PYTHONPATH"
 
 # Run pytest
 python -m pytest -v
-
-echo "========== CI: Tests finished =========="
