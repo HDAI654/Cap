@@ -58,9 +58,10 @@ async def test_list_by_trader_includes_buyer_and_seller(
 
     assert len(as_buyer) == 1
     assert len(as_seller) == 1
-    assert await trade_repository.list_by_trader(
-        "00000000-0000-4000-8000-000000000000"
-    ) == []
+    assert (
+        await trade_repository.list_by_trader("00000000-0000-4000-8000-000000000000")
+        == []
+    )
 
 
 async def test_list_by_instrument(
