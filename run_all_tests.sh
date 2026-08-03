@@ -43,3 +43,18 @@ print_green_banner "Running market_data_service tests"
 sh run_tests.sh market_data_service test/
 print_green_banner "market_data_service tests finished successfully"
 print_green_banner ""
+
+print_green_banner "Running notification_service tests"
+sh run_tests.sh notification_service test/
+print_green_banner "notification_service tests finished successfully"
+print_green_banner ""
+
+print_green_banner "Running notification_dispatcher tests"
+sh run_tests.sh notification_dispatcher test/
+print_green_banner "notification_dispatcher tests finished successfully"
+print_green_banner ""
+
+print_green_banner "Running balance_history_service tests"
+sh run_tests.sh balance_history_service test/
+print_green_banner "balance_history_service tests finished successfully"
+print_green_banner ""
