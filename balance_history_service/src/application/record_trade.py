@@ -54,8 +54,7 @@ class RecordTradeHandler:
                 execution_price=command.execution_price,
                 execution_price_currency=command.execution_price_currency,
                 sequence_number=command.sequence_number,
-                executed_at=command.executed_at
-                or datetime.now(timezone.utc),
+                executed_at=command.executed_at or datetime.now(timezone.utc),
             )
             await self._uow.trades.add(trade)
             await self._uow.commit()

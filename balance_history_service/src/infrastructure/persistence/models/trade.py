@@ -20,4 +20,6 @@ class TradeModel(Base):
     execution_price: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     execution_price_currency: Mapped[str] = mapped_column(String(3), nullable=False)
     sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    executed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )

@@ -23,4 +23,6 @@ class OrderHistoryModel(Base):
     price: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
     price_currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     status: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )

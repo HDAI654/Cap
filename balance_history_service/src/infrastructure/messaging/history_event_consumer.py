@@ -9,7 +9,11 @@ from src.application.record_order_event import (
     RecordOrderEventHandler,
 )
 from src.application.record_trade import RecordTradeCommand, RecordTradeHandler
-from src.exceptions import DuplicateTradeError, MessagingConnectionError, MessagingConsumeError
+from src.exceptions import (
+    DuplicateTradeError,
+    MessagingConnectionError,
+    MessagingConsumeError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -126,9 +130,7 @@ class HistoryEventConsumer:
         if event_type in _TRADE_EVENTS:
             await self._record_trade.handle(self._to_trade_command(payload))
         elif event_type in _ORDER_EVENTS:
-            await self._record_order.handle(
-                self._to_order_command(event_type, payload)
-            )
+            await self._record_order.handle(self._to_order_command(event_type, payload))
         else:
             logger.debug("Ignoring event_type=%s", event_type)
 
