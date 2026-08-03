@@ -7,7 +7,9 @@ from src.exceptions import MessagingConnectionError, MessagingConsumeError
 
 logger = logging.getLogger(__name__)
 
-_TRADE_EVENTS = frozenset({"TradeExecuted", "OrderFilled", "OrderPlaced", "OrderRemoved"})
+_TRADE_EVENTS = frozenset(
+    {"TradeExecuted", "OrderFilled", "OrderPlaced", "OrderRemoved"}
+)
 _ORDER_EVENTS = frozenset(
     {
         "OrderSubmitted",
@@ -105,6 +107,4 @@ class DispatcherEventConsumer:
                 await self._dispatch_handler.handle(str(event_type), payload)
             except Exception:
                 logger.exception("Failed to dispatch event_type=%s", event_type)
-                raise MessagingConsumeError(
-                    f"Failed to dispatch event '{event_type}'"
-                )
+                raise MessagingConsumeError(f"Failed to dispatch event '{event_type}'")

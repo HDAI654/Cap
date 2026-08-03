@@ -33,9 +33,7 @@ class DispatchEventHandler:
         )
 
     @staticmethod
-    def _resolve_recipients(
-        event_type: str, payload: dict[str, Any]
-    ) -> list[str]:
+    def _resolve_recipients(event_type: str, payload: dict[str, Any]) -> list[str]:
         recipients: set[str] = set()
 
         if trader_id := payload.get("trader_id"):
