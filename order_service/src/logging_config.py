@@ -1,8 +1,8 @@
 import logging
 import logging.config
-from src.conf import Config
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+from src.conf import Config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / "logs"
@@ -10,7 +10,7 @@ LOG_FILE = LOG_DIR / "app.log"
 APP_ENV = Config.APP_ENV
 
 
-def setup_logging():
+def setup_logging() -> None:
     LOG_DIR.mkdir(exist_ok=True)
 
     if APP_ENV == "development":

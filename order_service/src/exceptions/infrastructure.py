@@ -46,3 +46,9 @@ class MessagingPublishError(MessagingError):
     """Raised when publishing an event fails."""
 
     pass
+
+
+class MessagingConsumeError(MessagingError):
+    """Raised when consuming a message fails after retries are exhausted."""
+
+    pass

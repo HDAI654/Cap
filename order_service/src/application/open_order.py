@@ -46,6 +46,7 @@ class OpenOrderHandler:
                 published = True
 
         if published:
+            limit = order.limit_price
             await self._event_publisher.publish(
                 OrderOpened(
                     order_id=order.id.value,
@@ -53,8 +54,13 @@ class OpenOrderHandler:
                     instrument_id=order.instrument_id.value,
                     side=order.side.value,
                     order_type=order.order_type.value,
+                    time_in_force=order.time_in_force.value,
                     quantity=order.quantity.value,
                     remaining_quantity=order.remaining_quantity.value,
+                    limit_price=limit.amount if limit is not None else None,
+                    limit_price_currency=(
+                        limit.currency.value if limit is not None else None
+                    ),
                 )
             )
 

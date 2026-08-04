@@ -1,6 +1,5 @@
 import logging
 from types import TracebackType
-
 from sqlalchemy.exc import OperationalError, SQLAlchemyError, TimeoutError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 

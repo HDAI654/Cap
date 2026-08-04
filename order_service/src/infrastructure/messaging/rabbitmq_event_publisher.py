@@ -21,7 +21,12 @@ def _json_default(value: Any) -> Any:
 
 
 class RabbitMQEventPublisher(EventPublisher):
-    """Publishes domain events to a RabbitMQ topic exchange."""
+    """Publishes domain events to a RabbitMQ topic exchange.
+
+    Connection is established lazily on first publish (or via connect()).
+    The exchange is declared as durable topic so consumers can bind queues
+    with routing keys such as ``OrderSubmitted`` / ``OrderCancelled``.
+    """
 
     def __init__(
         self,

@@ -2,10 +2,12 @@ import logging
 from dataclasses import dataclass
 from decimal import Decimal
 
-from src.domain.events.order_events import OrderSubmitted
+from src.domain.events.order_events import OrderOpened, OrderSubmitted
 from src.domain.factories.order_factory import OrderFactory
 from src.domain.ports.event_publisher import EventPublisher
+from src.domain.ports.instrument_gateway import InstrumentGateway
 from src.domain.ports.unit_of_work import UnitOfWork
+from src.domain.ports.wallet_gateway import WalletGateway
 from src.domain.value_objects.currency import Currency
 from src.domain.value_objects.idempotency_key import IdempotencyKey
 from src.domain.value_objects.instrument_id import InstrumentId
@@ -16,6 +18,10 @@ from src.domain.value_objects.quantity import Quantity
 from src.domain.value_objects.time_in_force import TimeInForce
 from src.domain.value_objects.trader_id import TraderId
 from src.exceptions import InvalidOrderParametersError, OrderAlreadyExistsError
+from src.infrastructure.http_clients.noop_instrument_gateway import (
+    NoOpInstrumentGateway,
+)
+from src.infrastructure.http_clients.noop_wallet_gateway import NoOpWalletGateway
 
 logger = logging.getLogger(__name__)
 
@@ -43,24 +49,28 @@ class SubmitOrderResult:
 
 
 class SubmitOrderHandler:
-    """Application service that submits a new order."""
+    """Submit a new order, reserve funds, open it, and publish lifecycle events.
+
+    Flow:
+        1. Validate instrument is tradable (Admin).
+        2. Reserve cash (BUY) or holdings (SELL) via Wallet.
+        3. Persist NEW → OPEN in one unit of work.
+        4. Publish OrderSubmitted and OrderOpened (ME matches on Opened).
+    """
 
     def __init__(
         self,
         uow: UnitOfWork,
         event_publisher: EventPublisher,
+        wallet_gateway: WalletGateway | None = None,
+        instrument_gateway: InstrumentGateway | None = None,
     ) -> None:
         self._uow = uow
         self._event_publisher = event_publisher
+        self._wallet = wallet_gateway or NoOpWalletGateway()
+        self._instruments = instrument_gateway or NoOpInstrumentGateway()
 
     async def handle(self, command: SubmitOrderCommand) -> SubmitOrderResult:
-        """Submit a new order and publish OrderSubmitted.
-
-        Raises:
-            OrderAlreadyExistsError: If an order already exists for the
-                trader and idempotency key.
-            InvalidOrderParametersError: If command fields violate domain rules.
-        """
         logger.info(
             "Submitting order: trader_id=%s, instrument_id=%s, side=%s, "
             "type=%s, quantity=%s, idempotency_key=%s",
@@ -86,6 +96,10 @@ class SubmitOrderHandler:
             order_type,
         )
 
+        await self._instruments.ensure_tradable(command.instrument_id)
+
+        await self._reserve(command, side, order_type, limit_price)
+
         async with self._uow:
             existing = await self._uow.orders.get_by_idempotency_key(
                 trader_id,
@@ -108,6 +122,10 @@ class SubmitOrderHandler:
                 limit_price=limit_price,
             )
             await self._uow.orders.add(order)
+
+            # Accept onto the book immediately so ME can match (NEW → OPEN).
+            order.open()
+            await self._uow.orders.update(order)
             await self._uow.commit()
             order.clear_changes()
 
@@ -128,10 +146,52 @@ class SubmitOrderHandler:
                 idempotency_key=order.idempotency_key.value,
             )
         )
+        await self._event_publisher.publish(
+            OrderOpened(
+                order_id=order.id.value,
+                trader_id=order.trader_id.value,
+                instrument_id=order.instrument_id.value,
+                side=order.side.value,
+                order_type=order.order_type.value,
+                time_in_force=order.time_in_force.value,
+                quantity=order.quantity.value,
+                remaining_quantity=order.remaining_quantity.value,
+                limit_price=limit.amount if limit is not None else None,
+                limit_price_currency=(
+                    limit.currency.value if limit is not None else None
+                ),
+            )
+        )
 
-        logger.info("Order submitted successfully: order_id=%s", order.id.value)
-
+        logger.info(
+            "Order submitted and opened: order_id=%s",
+            order.id.value,
+        )
         return SubmitOrderResult(order_id=order.id.value)
+
+    async def _reserve(
+        self,
+        command: SubmitOrderCommand,
+        side: OrderSide,
+        order_type: OrderType,
+        limit_price: Money | None,
+    ) -> None:
+        if side is OrderSide.BUY:
+            if order_type is OrderType.LIMIT and limit_price is not None:
+                notional = limit_price.amount * Decimal(command.quantity)
+                await self._wallet.reserve_for_buy(
+                    command.trader_id,
+                    notional,
+                    limit_price.currency.value,
+                )
+            # MARKET buys: reservation requires LTP; deferred when no price.
+            return
+
+        await self._wallet.reserve_for_sell(
+            command.trader_id,
+            command.instrument_id,
+            command.quantity,
+        )
 
     @staticmethod
     def _parse_side(value: str) -> OrderSide:

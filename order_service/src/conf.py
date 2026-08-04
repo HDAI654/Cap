@@ -22,6 +22,7 @@ class Config:
     )
 
     # Event bus (RabbitMQ)
+    # Disabled by default so unit/e2e tests and local runs need no broker.
     RABBITMQ_ENABLED: bool = os.getenv("RABBITMQ_ENABLED", "false").lower() in (
         "1",
         "true",
@@ -38,4 +39,28 @@ class Config:
     RABBITMQ_EXCHANGE_TYPE: str = os.getenv(
         "RABBITMQ_EXCHANGE_TYPE",
         "topic",
+    )
+
+    # Cross-service integrations (disabled by default for isolated tests)
+    WALLET_INTEGRATION_ENABLED: bool = os.getenv(
+        "WALLET_INTEGRATION_ENABLED", "false"
+    ).lower() in ("1", "true", "yes")
+    WALLET_SERVICE_URL: str = os.getenv(
+        "WALLET_SERVICE_URL",
+        "http://localhost:8001",
+    )
+    ADMIN_INTEGRATION_ENABLED: bool = os.getenv(
+        "ADMIN_INTEGRATION_ENABLED", "false"
+    ).lower() in ("1", "true", "yes")
+    ADMIN_SERVICE_URL: str = os.getenv(
+        "ADMIN_SERVICE_URL",
+        "http://localhost:8002",
+    )
+    RABBITMQ_TRADE_EVENTS_EXCHANGE: str = os.getenv(
+        "RABBITMQ_TRADE_EVENTS_EXCHANGE",
+        "trade.events",
+    )
+    RABBITMQ_FILL_QUEUE: str = os.getenv(
+        "RABBITMQ_FILL_QUEUE",
+        "order_service.fills",
     )

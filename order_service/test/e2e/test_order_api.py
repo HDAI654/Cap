@@ -173,7 +173,7 @@ class TestGetOrder:
         assert body["remaining_quantity"] == 100
         assert str(body["limit_price"]) in ("10.50", "10.5")
         assert body["limit_price_currency"] == "USD"
-        assert body["status"] == "NEW"
+        assert body["status"] == "OPEN"
         assert body["idempotency_key"] == submitted_limit_order["idempotency_key"]
         assert "created_at" in body
         assert "updated_at" in body
@@ -246,16 +246,13 @@ class TestListOrdersByTrader:
 class TestOpenOrder:
     """POST /api/v1/orders/{order_id}/open"""
 
-    def test_opens_new_order(
+    def test_submit_already_opens_order(
         self,
         client: TestClient,
         submitted_limit_order: dict,
     ) -> None:
+        """Submit path opens the order; explicit open is idempotent-conflict."""
         order_id = submitted_limit_order["order_id"]
-
-        response = client.post(f"{BASE}/{order_id}/open")
-
-        assert response.status_code == 204
         assert _get_order(client, order_id)["status"] == "OPEN"
 
     def test_already_open_returns_409(
@@ -332,19 +329,17 @@ class TestFillOrder:
 
         assert response.status_code == 422
 
-    def test_fill_new_order_returns_409(
+    def test_fill_auto_opened_order_succeeds(
         self,
         client: TestClient,
         submitted_limit_order: dict,
     ) -> None:
         order_id = submitted_limit_order["order_id"]
-
         response = client.post(
             f"{BASE}/{order_id}/fills",
             json={"fill_quantity": 10},
         )
-
-        assert response.status_code == 409
+        assert response.status_code == 204
 
     def test_missing_order_returns_404(self, client: TestClient) -> None:
         response = client.post(
@@ -409,17 +404,15 @@ class TestCancelOrder:
 class TestRejectOrder:
     """POST /api/v1/orders/{order_id}/reject"""
 
-    def test_rejects_new_order(
+    def test_reject_after_auto_open_returns_409(
         self,
         client: TestClient,
         submitted_limit_order: dict,
     ) -> None:
+        """Submit auto-opens; only NEW orders can be rejected."""
         order_id = submitted_limit_order["order_id"]
-
         response = client.post(f"{BASE}/{order_id}/reject")
-
-        assert response.status_code == 204
-        assert _get_order(client, order_id)["status"] == "REJECTED"
+        assert response.status_code == 409
 
     def test_reject_open_returns_409(
         self,
@@ -450,16 +443,15 @@ class TestExpireOrder:
         assert response.status_code == 204
         assert _get_order(client, order_id)["status"] == "EXPIRED"
 
-    def test_expire_new_returns_409(
+    def test_expire_auto_opened_order_succeeds(
         self,
         client: TestClient,
         submitted_limit_order: dict,
     ) -> None:
         order_id = submitted_limit_order["order_id"]
-
         response = client.post(f"{BASE}/{order_id}/expire")
-
-        assert response.status_code == 409
+        assert response.status_code == 204
+        assert _get_order(client, order_id)["status"] == "EXPIRED"
 
 
 # ---------------------------------------------------------------------------
@@ -475,11 +467,8 @@ class TestOrderJourneys:
         client: TestClient,
         limit_order_payload: dict,
     ) -> None:
-        """Submit → open → partial fill → complete fill."""
+        """Submit (auto-open) → partial fill → complete fill."""
         order_id = _submit(client, limit_order_payload)
-        assert _get_order(client, order_id)["status"] == "NEW"
-
-        assert client.post(f"{BASE}/{order_id}/open").status_code == 204
         assert _get_order(client, order_id)["status"] == "OPEN"
 
         assert (
@@ -511,9 +500,8 @@ class TestOrderJourneys:
         client: TestClient,
         limit_order_payload: dict,
     ) -> None:
-        """Submit → open → partial fill → cancel."""
+        """Submit (auto-open) → partial fill → cancel."""
         order_id = _submit(client, limit_order_payload)
-        client.post(f"{BASE}/{order_id}/open")
         client.post(f"{BASE}/{order_id}/fills", json={"fill_quantity": 40})
         client.post(f"{BASE}/{order_id}/cancel")
 
@@ -522,15 +510,12 @@ class TestOrderJourneys:
         assert body["filled_quantity"] == 40
         assert body["remaining_quantity"] == 60
 
-    def test_reject_new_order_journey(
+    def test_reject_auto_opened_order_journey(
         self,
         client: TestClient,
         market_order_payload: dict,
     ) -> None:
-        """Submit MARKET → reject."""
+        """Submit MARKET auto-opens; reject is no longer valid."""
         order_id = _submit(client, market_order_payload)
-        assert client.post(f"{BASE}/{order_id}/reject").status_code == 204
-
-        body = _get_order(client, order_id)
-        assert body["status"] == "REJECTED"
-        assert body["limit_price"] is None
+        assert _get_order(client, order_id)["status"] == "OPEN"
+        assert client.post(f"{BASE}/{order_id}/reject").status_code == 409

@@ -32,15 +32,22 @@ class OrderSubmitted(DomainEvent):
 
 @dataclass(frozen=True, slots=True)
 class OrderOpened(DomainEvent):
-    """Emitted after a NEW order is accepted onto the book (NEW → OPEN)."""
+    """Emitted after a NEW order is accepted onto the book (NEW → OPEN).
+
+    Includes full order parameters so the Matching Engine can match without
+    an extra lookup.
+    """
 
     order_id: str = ""
     trader_id: str = ""
     instrument_id: str = ""
     side: str = ""
     order_type: str = ""
+    time_in_force: str = ""
     quantity: int = 0
     remaining_quantity: int = 0
+    limit_price: Decimal | None = None
+    limit_price_currency: str | None = None
     event_type: str = "OrderOpened"
 
 

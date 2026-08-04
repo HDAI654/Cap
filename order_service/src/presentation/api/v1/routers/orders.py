@@ -18,6 +18,10 @@ from src.application.submit_order import (
     SubmitOrderHandler,
 )
 from src.exceptions import (
+    InstrumentNotTradableError,
+    InsufficientFundsError,
+    InsufficientHoldingsError,
+    WalletIntegrationError,
     DatabaseConnectionError,
     DatabaseOperationError,
     DatabaseTimeoutError,
@@ -42,7 +46,12 @@ from src.presentation.api.v1.schemas.responses import (
     OrderResponse,
     SubmitOrderResponse,
 )
-from src.presentation.dependencies import EventPublisherDep, UoWFactory
+from src.presentation.dependencies import (
+    EventPublisherDep,
+    InstrumentGatewayDep,
+    UoWFactory,
+    WalletGatewayDep,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +103,8 @@ async def submit_order(
     body: SubmitOrderRequest,
     uow_factory: UoWFactory,
     event_publisher: EventPublisherDep,
+    wallet_gateway: WalletGatewayDep,
+    instrument_gateway: InstrumentGatewayDep,
 ) -> SubmitOrderResponse:
     """Submit a new order for a trader."""
     logger.info(
@@ -103,7 +114,12 @@ async def submit_order(
         body.side,
         body.order_type,
     )
-    handler = SubmitOrderHandler(uow_factory(), event_publisher)
+    handler = SubmitOrderHandler(
+        uow_factory(),
+        event_publisher,
+        wallet_gateway=wallet_gateway,
+        instrument_gateway=instrument_gateway,
+    )
     try:
         result = await handler.handle(
             SubmitOrderCommand(
@@ -388,10 +404,13 @@ async def cancel_order(
     order_id: OrderIdPath,
     uow_factory: UoWFactory,
     event_publisher: EventPublisherDep,
+    wallet_gateway: WalletGatewayDep,
 ) -> Response:
     """Cancel an active order."""
     logger.info("Cancelling order: order_id=%s", order_id)
-    handler = CancelOrderHandler(uow_factory(), event_publisher)
+    handler = CancelOrderHandler(
+        uow_factory(), event_publisher, wallet_gateway=wallet_gateway
+    )
     try:
         await handler.handle(CancelOrderCommand(order_id=order_id))
     except OrderNotFoundError as exc:

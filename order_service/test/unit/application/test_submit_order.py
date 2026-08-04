@@ -9,7 +9,7 @@ from src.application.submit_order import (
     SubmitOrderResult,
 )
 from src.domain.entities.order import Order
-from src.domain.events.order_events import OrderSubmitted
+from src.domain.events.order_events import OrderOpened, OrderSubmitted
 from src.domain.value_objects.instrument_id import InstrumentId
 from src.domain.value_objects.order_status import OrderStatus
 from src.domain.value_objects.order_type import OrderType
@@ -50,19 +50,20 @@ async def test_submits_limit_order(
     assert added.trader_id == sample_trader_id
     assert added.instrument_id == sample_instrument_id
     assert added.order_type is OrderType.LIMIT
-    assert added.status is OrderStatus.NEW
+    assert added.status is OrderStatus.OPEN
     assert added.quantity.value == 100
     assert added.limit_price is not None
     assert added.limit_price.amount == Decimal("10.50")
     mock_uow.commit.assert_awaited_once()
-    mock_event_publisher.publish.assert_awaited_once()
-    event = mock_event_publisher.publish.await_args.args[0]
-    assert isinstance(event, OrderSubmitted)
-    assert event.order_id == result.order_id
-    assert event.side == "BUY"
-    assert event.order_type == "LIMIT"
-    assert event.quantity == 100
-    assert event.limit_price == Decimal("10.50")
+    assert mock_event_publisher.publish.await_count == 2
+    events = [c.args[0] for c in mock_event_publisher.publish.await_args_list]
+    assert isinstance(events[0], OrderSubmitted)
+    assert isinstance(events[1], OrderOpened)
+    assert events[0].order_id == result.order_id
+    assert events[0].side == "BUY"
+    assert events[0].order_type == "LIMIT"
+    assert events[0].quantity == 100
+    assert events[0].limit_price == Decimal("10.50")
 
 
 async def test_submits_market_order(
@@ -92,11 +93,12 @@ async def test_submits_market_order(
     assert added.order_type is OrderType.MARKET
     assert added.limit_price is None
     mock_uow.commit.assert_awaited_once()
-    mock_event_publisher.publish.assert_awaited_once()
-    event = mock_event_publisher.publish.await_args.args[0]
-    assert isinstance(event, OrderSubmitted)
-    assert event.order_type == "MARKET"
-    assert event.limit_price is None
+    assert mock_event_publisher.publish.await_count == 2
+    events = [c.args[0] for c in mock_event_publisher.publish.await_args_list]
+    assert isinstance(events[0], OrderSubmitted)
+    assert isinstance(events[1], OrderOpened)
+    assert events[0].order_type == "MARKET"
+    assert events[0].limit_price is None
 
 
 async def test_raises_when_idempotency_key_exists(

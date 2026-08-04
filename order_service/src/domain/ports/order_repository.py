@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from src.domain.entities.order import Order
 from src.domain.value_objects.idempotency_key import IdempotencyKey
 from src.domain.value_objects.order_id import OrderId
