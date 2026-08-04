@@ -23,6 +23,10 @@ from src.application.create_wallet import (
 )
 from src.application.deposit_cash import DepositCashCommand, DepositCashHandler
 from src.application.get_wallet import GetWalletHandler, GetWalletQuery
+from src.application.get_wallet_by_trader import (
+    GetWalletByTraderHandler,
+    GetWalletByTraderQuery,
+)
 from src.application.lock_wallet import LockWalletCommand, LockWalletHandler
 from src.application.release_cash import ReleaseCashCommand, ReleaseCashHandler
 from src.application.release_holding import (
@@ -140,6 +144,52 @@ async def create_wallet(
 
     logger.info("Wallet created: wallet_id=%s", result.wallet_id)
     return CreateWalletResponse(wallet_id=result.wallet_id)
+
+
+@router.get(
+    "/by-trader/{trader_id}",
+    response_model=WalletResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get wallet by trader id",
+)
+async def get_wallet_by_trader(
+    trader_id: Annotated[str, Path(..., min_length=36, max_length=36)],
+    uow_factory: UoWFactory,
+) -> WalletResponse:
+    """Resolve a wallet from its owning trader id."""
+    handler = GetWalletByTraderHandler(uow_factory())
+    try:
+        dto = await handler.handle(GetWalletByTraderQuery(trader_id=trader_id))
+    except WalletNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc) or "Wallet not found.",
+        )
+    except Exception:
+        logger.exception("Unexpected error getting wallet by trader")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
+    return WalletResponse(
+        wallet_id=dto.wallet_id,
+        trader_id=dto.trader_id,
+        status=dto.status,
+        cash_balances=[
+            {"currency": b.currency, "available": b.available, "reserved": b.reserved}
+            for b in dto.cash_balances
+        ],
+        holdings=[
+            {
+                "instrument_id": h.instrument_id,
+                "available": h.available,
+                "reserved": h.reserved,
+                "average_cost": h.average_cost,
+                "average_cost_currency": h.average_cost_currency,
+            }
+            for h in dto.holdings
+        ],
+    )
 
 
 @router.get(

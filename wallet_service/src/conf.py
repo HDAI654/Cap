@@ -19,3 +19,23 @@ class Config:
         "DATABASE_URL",
         "sqlite+aiosqlite:///:memory:",
     )
+
+    # Settlement consumer (TradeExecuted)
+    RABBITMQ_ENABLED: bool = os.getenv("RABBITMQ_ENABLED", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    RABBITMQ_URL: str = os.getenv(
+        "RABBITMQ_URL",
+        "amqp://guest:guest@localhost:5672/",
+    )
+    RABBITMQ_TRADE_EVENTS_EXCHANGE: str = os.getenv(
+        "RABBITMQ_TRADE_EVENTS_EXCHANGE",
+        "trade.events",
+    )
+    RABBITMQ_EXCHANGE_TYPE: str = os.getenv("RABBITMQ_EXCHANGE_TYPE", "topic")
+    RABBITMQ_SETTLEMENT_QUEUE: str = os.getenv(
+        "RABBITMQ_SETTLEMENT_QUEUE",
+        "wallet_service.settlement",
+    )
