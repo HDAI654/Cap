@@ -102,7 +102,9 @@ async def send_verification(
     except EmailBlockedError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
     except InvalidEmailError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
+        )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -137,11 +139,17 @@ async def signup(
     except UserAlreadyExistsError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
     except InvalidPasswordError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
+        )
     except (DatabaseConnectionError, DatabaseTimeoutError) as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        )
     except DatabaseOperationError as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
     return TokenPairResponse(
         access_token=result.access_token, refresh_token=result.refresh_token
     )
@@ -172,7 +180,9 @@ async def login(
             detail="Invalid email or password",
         )
     except InvalidEmailError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
+        )
     return TokenPairResponse(
         access_token=result.access_token, refresh_token=result.refresh_token
     )
@@ -253,9 +263,7 @@ async def delete_account(
     authorization: Annotated[str | None, Header()] = None,
 ) -> Response:
     token = _bearer(authorization)
-    handler = DeleteAccountHandler(
-        uow_factory(), sessions, decoder, encoder, events
-    )
+    handler = DeleteAccountHandler(uow_factory(), sessions, decoder, encoder, events)
     try:
         await handler.handle(
             DeleteAccountCommand(access_token=token, device=body.device)
@@ -284,7 +292,9 @@ async def forget_password(
     try:
         await handler.handle(ForgetPasswordCommand(email=body.email))
     except InvalidEmailError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
+        )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -310,7 +320,9 @@ async def reset_password(
     except InvalidVerificationTokenError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except InvalidPasswordError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
+        )
     except UserNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -331,9 +343,7 @@ async def set_password(
     authorization: Annotated[str | None, Header()] = None,
 ) -> Response:
     token = _bearer(authorization)
-    handler = SetPasswordHandler(
-        uow_factory(), sessions, decoder, encoder, hasher
-    )
+    handler = SetPasswordHandler(uow_factory(), sessions, decoder, encoder, hasher)
     try:
         await handler.handle(
             SetPasswordCommand(
@@ -349,7 +359,9 @@ async def set_password(
     except TokenInfrastructureError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
     except InvalidPasswordError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
+        )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
