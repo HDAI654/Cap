@@ -36,3 +36,6 @@ class UserNotFoundError(DomainError):
 
 class UserAlreadyExistsError(DomainError):
     """User already exists for the given email."""
+
+class SessionNotFoundError(DomainError):
+    """Session was not found."""
