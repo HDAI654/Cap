@@ -16,4 +16,7 @@ class InvalidEmailError(DomainError):
 class InvalidPasswordError(DomainError):
     """Password does not meet domain strength rules."""
 
+class InvalidHashedPasswordError(DomainError):
+    """Hashed password payload is invalid."""
+
 
