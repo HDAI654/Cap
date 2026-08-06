@@ -28,9 +28,7 @@ def test_decode_wrong_type_raises() -> None:
         UserId.generate(), SessionId.generate(), Device("web"), Role.user()
     )
     with pytest.raises(TokenInfrastructureError):
-        dec.decode_and_validate(
-            enc.FIELD_TYPE_MAP, token, expected_token_type="access"
-        )
+        dec.decode_and_validate(enc.FIELD_TYPE_MAP, token, expected_token_type="access")
 
 
 def test_decode_garbage_raises() -> None:
