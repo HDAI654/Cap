@@ -1,7 +1,4 @@
-"""Password hashing port."""
-
 from abc import ABC, abstractmethod
-
 from src.domain.value_objects.hashed_password import HashedPassword
 from src.domain.value_objects.password import Password
 
