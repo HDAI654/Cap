@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from src.domain.ports.user_repository import UserRepository
 
+
 class UnitOfWork(ABC):
     """Coordinates user repository writes and transaction boundaries."""
 

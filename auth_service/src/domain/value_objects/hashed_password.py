@@ -1,6 +1,7 @@
 from shared.base_vo import BaseVO
 from src.exceptions import InvalidHashedPasswordError
 
+
 class HashedPassword(BaseVO[str]):
     """Opaque password hash string produced by PasswordHasher."""
 

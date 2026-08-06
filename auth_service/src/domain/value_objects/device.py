@@ -1,6 +1,7 @@
 from shared.base_vo import BaseVO
 from src.exceptions import InvalidDeviceError
 
+
 class Device(BaseVO[str]):
     """Opaque device label bound into session tokens."""
 
