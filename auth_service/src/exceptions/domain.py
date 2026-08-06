@@ -19,4 +19,7 @@ class InvalidPasswordError(DomainError):
 class InvalidHashedPasswordError(DomainError):
     """Hashed password payload is invalid."""
 
+class InvalidDeviceError(DomainError):
+    """Device identifier is invalid."""
+
 
