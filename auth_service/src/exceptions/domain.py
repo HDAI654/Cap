@@ -1,7 +1,7 @@
 class DomainError(Exception):
     """Base domain error."""
 
-
+# ===== VOs =====
 class InvalidUserIdError(DomainError):
     """User id is not a valid UUID v4."""
 
@@ -28,5 +28,7 @@ class InvalidDateError(DomainError):
 class InvalidRoleError(DomainError):
     """Role value is not recognized."""
 
+class InvalidEmailVerificationTokenError(DomainError):
+    """Email verification token is not a valid UUID v4."""
 
 
