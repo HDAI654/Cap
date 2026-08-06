@@ -31,4 +31,8 @@ class InvalidRoleError(DomainError):
 class InvalidEmailVerificationTokenError(DomainError):
     """Email verification token is not a valid UUID v4."""
 
+class UserNotFoundError(DomainError):
+    """User aggregate was not found."""
 
+class UserAlreadyExistsError(DomainError):
+    """User already exists for the given email."""

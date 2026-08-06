@@ -1,10 +1,5 @@
-"""One-time email verification / password-reset token."""
-
-from __future__ import annotations
-
 import uuid
 from typing import Self
-
 from shared.base_vo import BaseVO
 from src.exceptions import InvalidEmailVerificationTokenError
 
