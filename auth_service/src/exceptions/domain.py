@@ -9,5 +9,7 @@ class InvalidUserIdError(DomainError):
 class InvalidSessionIdError(DomainError):
     """Session id is not a valid UUID v4."""
 
+class InvalidEmailError(DomainError):
+    """Email format is invalid."""
 
 
