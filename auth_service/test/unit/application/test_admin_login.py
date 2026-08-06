@@ -4,6 +4,7 @@ from src.application.admin_login import AdminLoginCommand, AdminLoginHandler
 from src.domain.value_objects.role import Role
 from src.exceptions import InvalidEmailOrPasswordError
 
+
 @pytest.mark.asyncio
 async def test_admin_login_requires_hash_config(
     mock_uow, mock_sessions, mock_encoder, mock_hasher, sample_user
@@ -29,7 +30,9 @@ async def test_admin_login_success(
     mock_uow.users.get_by_email = AsyncMock(return_value=sample_user)
     with patch("src.application.admin_login.Config") as cfg:
         cfg.ADMIN_PASSWORD_HASH = "$2b$12$placeholder"
-        with patch.object(AdminLoginHandler, "_verify_admin_password", return_value=True):
+        with patch.object(
+            AdminLoginHandler, "_verify_admin_password", return_value=True
+        ):
             handler = AdminLoginHandler(
                 mock_uow, mock_sessions, mock_encoder, mock_hasher, mock_events
             )

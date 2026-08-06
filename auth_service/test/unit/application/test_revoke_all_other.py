@@ -21,7 +21,5 @@ async def test_revoke_all_other(mock_sessions, mock_decoder, mock_encoder):
         return_value=Session.create(user_id=uid.value, device="web", id=sid)
     )
     handler = RevokeAllOtherSessionsHandler(mock_sessions, mock_decoder, mock_encoder)
-    await handler.handle(
-        RevokeAllOtherSessionsCommand(access_token="t", device="web")
-    )
+    await handler.handle(RevokeAllOtherSessionsCommand(access_token="t", device="web"))
     mock_sessions.delete_all_other_sessions.assert_awaited_once()

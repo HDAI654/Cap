@@ -26,9 +26,7 @@ async def test_rotate_access_only(mock_sessions, mock_decoder, mock_encoder):
         return_value=Session.create(user_id=uid.value, device="web", id=sid)
     )
     handler = RotateTokensHandler(mock_sessions, mock_decoder, mock_encoder)
-    result = await handler.handle(
-        RotateTokensCommand(refresh_token="r", device="web")
-    )
+    result = await handler.handle(RotateTokensCommand(refresh_token="r", device="web"))
     assert result.access_token == "access.jwt"
     assert result.refresh_token is None
 

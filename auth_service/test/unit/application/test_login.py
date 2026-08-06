@@ -9,9 +9,13 @@ from src.exceptions import InvalidEmailOrPasswordError, UserNotFoundError
 
 
 @pytest.mark.asyncio
-async def test_login_success(mock_uow, mock_sessions, mock_encoder, mock_hasher, mock_events, sample_user):
+async def test_login_success(
+    mock_uow, mock_sessions, mock_encoder, mock_hasher, mock_events, sample_user
+):
     mock_uow.users.get_by_email = AsyncMock(return_value=sample_user)
-    handler = LoginHandler(mock_uow, mock_sessions, mock_encoder, mock_hasher, mock_events)
+    handler = LoginHandler(
+        mock_uow, mock_sessions, mock_encoder, mock_hasher, mock_events
+    )
 
     result = await handler.handle(
         LoginCommand(email="trader@example.com", password="secret1A", device="web")
@@ -38,7 +42,9 @@ async def test_login_unknown_user(mock_uow, mock_sessions, mock_encoder, mock_ha
 
 
 @pytest.mark.asyncio
-async def test_login_bad_password(mock_uow, mock_sessions, mock_encoder, mock_hasher, sample_user):
+async def test_login_bad_password(
+    mock_uow, mock_sessions, mock_encoder, mock_hasher, sample_user
+):
     mock_uow.users.get_by_email = AsyncMock(return_value=sample_user)
     mock_hasher.verify = MagicMock(return_value=False)
     handler = LoginHandler(mock_uow, mock_sessions, mock_encoder, mock_hasher)

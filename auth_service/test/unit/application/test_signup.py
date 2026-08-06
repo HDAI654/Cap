@@ -18,7 +18,11 @@ async def test_signup_success(
     )
 
     result = await handler.handle(
-        SignupCommand(verify_token="11111111-1111-4111-8111-111111111111", password="secret1A", device="ios")
+        SignupCommand(
+            verify_token="11111111-1111-4111-8111-111111111111",
+            password="secret1A",
+            device="ios",
+        )
     )
 
     assert isinstance(result, SignupResult)

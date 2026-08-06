@@ -26,9 +26,7 @@ async def test_send_verification_publishes_event(
 
 
 @pytest.mark.asyncio
-async def test_send_verification_blocked(
-    mock_token_repo, mock_events, mock_blocklist
-):
+async def test_send_verification_blocked(mock_token_repo, mock_events, mock_blocklist):
     mock_blocklist.is_blocked = AsyncMock(return_value=True)
     handler = SendVerificationHandler(mock_token_repo, mock_events, mock_blocklist)
     with pytest.raises(EmailBlockedError):

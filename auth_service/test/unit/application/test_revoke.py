@@ -30,7 +30,9 @@ async def test_revoke_own_session(mock_sessions, mock_decoder, mock_encoder):
 
 
 @pytest.mark.asyncio
-async def test_revoke_other_users_session_denied(mock_sessions, mock_decoder, mock_encoder):
+async def test_revoke_other_users_session_denied(
+    mock_sessions, mock_decoder, mock_encoder
+):
     uid = UserId.generate()
     other = UserId.generate()
     sid = "22222222-2222-4222-8222-222222222222"
