@@ -14,3 +14,11 @@ class InvalidVerificationTokenError(ApplicationError):
     """Verification or reset token is missing or expired."""
 
 
+class DeviceMismatchError(ApplicationError):
+    """Request device does not match the session device claim."""
+
+
+class PermissionDeniedError(ApplicationError):
+    """Caller is not allowed to perform the requested action."""
+
+
