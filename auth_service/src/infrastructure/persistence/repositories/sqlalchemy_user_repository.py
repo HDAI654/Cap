@@ -1,9 +1,4 @@
-"""SQLAlchemy implementation of UserRepository."""
-
-from __future__ import annotations
-
 import logging
-
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError, TimeoutError
 from sqlalchemy.ext.asyncio import AsyncSession
