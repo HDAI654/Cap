@@ -1,4 +1,4 @@
-# Cap - Stock Exchange (🚧 In Development)
+# Cap — Stock Exchange
 
 ![Status](https://img.shields.io/badge/status-active--development-yellow)
 ![Version](https://img.shields.io/badge/version-0.1.0--alpha-blue)
@@ -8,12 +8,38 @@
 A scalable, event-driven stock exchange platform built with **microservices**,
 **Domain-Driven Design (DDD)**, and **hexagonal architecture**.
 
+## Overview
 
+Cap models a trading venue as collaborating services around an event bus and a
+market-data cache:
+
+```text
+Trader / Admin
+      │
+      ▼
+ API Gateway (planned)
+      │
+      ├─► Auth Service (sessions, tokens, auth.events)
+      ├─► Order Ingress (OIS) ──publish──► order.events
+      ├─► Wallet Service
+      ├─► Admin Service
+      ├─► Market Data API ◄── Redis (book / LTP)
+      └─► Notification Service (WebSocket)
+                ▲
+                │ push
+      Notification Dispatcher ◄── order/trade/auth events
+      Balance & History ◄──────── order/trade events ──► Store
+      Matching Engine ◄── OrderOpened / OrderCancelled
+                │
+                ├──► trade.events (TradeExecuted, OrderFilled, …)
+                └──► Redis snapshots
+```
 
 ### Services
 
 | Service | Role | Entry |
 |---------|------|--------|
+| **auth_service** | Signup/login/sessions/tokens; publishes auth events | HTTP API |
 | **wallet_service** | Cash & holdings lifecycle | HTTP API |
 | **order_service** | Order ingress, lifecycle, fill apply | HTTP API + fill worker |
 | **matching_engine** | In-memory price-time priority book | Worker |
@@ -36,6 +62,7 @@ See [docs/high-level-architecture.md](docs/high-level-architecture.md) and
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
 | [LICENSE](LICENSE) | MIT |
 | [docs/](docs/) | Domain model & architecture diagrams |
+| [STRUCTURE.md](STRUCTURE.md) | Repository tree snapshot |
 
 ## Quick start
 
@@ -55,6 +82,7 @@ source .venv/bin/activate
 
 # From repository root — installs <service>/requirements.txt then runs tests
 sh run_tests.sh order_service/ test/
+sh run_tests.sh auth_service/ test/
 sh run_tests.sh wallet_service/ test/
 ```
 
@@ -110,12 +138,13 @@ uvicorn order_service.src.app:app --reload --port 8003
 
 ## Status & roadmap
 
-**Implemented:** Wallet, OIS, ME, Admin, MDA, BHS, ND, NS, cross-service reserve/fill/settlement hooks.
+**Implemented:** Auth, Wallet, OIS, ME, Admin, MDA, BHS, ND, NS, cross-service reserve/fill/settlement hooks.
 
 **Planned / partial:**
 
-- API Gateway & dedicated Auth service
+- API Gateway (edge JWT, role checks, reverse proxy)
 - OIS last-trade-price validation from cache
+- Notification delivery for `VerificationTokenCreated` (email channel)
 - Unified shared history store for Wallet ↔ BHS
 - Production deployment manifests
 

@@ -58,3 +58,8 @@ print_green_banner "Running balance_history_service tests"
 sh run_tests.sh balance_history_service test/
 print_green_banner "balance_history_service tests finished successfully"
 print_green_banner ""
+
+print_green_banner "Running auth_service tests"
+sh run_tests.sh auth_service test/
+print_green_banner "auth_service tests finished successfully"
+print_green_banner ""

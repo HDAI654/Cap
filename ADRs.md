@@ -1,8 +1,6 @@
 # Architecture Decision Records
 
-This document records **durable architectural decisions** for Cap.
-Format follows the spirit of [Michael Nygard’s ADR pattern](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions):
-context, decision, consequences. Status values: **Accepted** | **Superseded** | **Deprecated**.
+Durable decisions for Cap. Format: context → decision → consequences.
 
 ---
 
@@ -13,25 +11,15 @@ context, decision, consequences. Status values: **Accepted** | **Superseded** | 
 | **Status** | Accepted |
 | **Date** | 2026-07 |
 
-### Context
-
-A monolithic exchange couples order entry, matching, balances, and market data
-into one deployable unit, making independent scaling and failure isolation hard.
-
 ### Decision
 
-Split the system into services aligned with domain capabilities:
-
-- Wallet, Order Ingress, Matching Engine, Admin, Market Data API
-- Event consumers: Balance & History, Notification Dispatcher
-- Real-time edge: Notification Service
-- Planned: API Gateway, Auth
+Split the exchange into services: Auth, Wallet, Order Ingress, Matching
+Engine, Admin, Market Data, Balance & History, Notification Dispatcher,
+Notification Service. API Gateway is planned as a separate edge component.
 
 ### Consequences
 
-- Independent deploy and scale per workload (especially ME).
-- Cross-service consistency requires events and explicit integration ports.
-- Operational complexity (bus, cache, multiple processes) increases.
+Independent deploy/scale; cross-service consistency via events and ports.
 
 ---
 
@@ -42,53 +30,26 @@ Split the system into services aligned with domain capabilities:
 | **Status** | Accepted |
 | **Date** | 2026-07 |
 
-### Context
-
-Framework and persistence choices change; domain rules must remain testable
-without FastAPI or SQLAlchemy.
-
 ### Decision
 
-Each service uses layers:
-
-1. **Domain** — entities, value objects, domain events, ports  
-2. **Application** — command/query handlers  
-3. **Infrastructure** — SQLAlchemy, RabbitMQ, Redis, HTTP clients  
-4. **Presentation** — FastAPI (only for services that expose HTTP)
+Layers: domain (entities, VOs, ports, events) → application (handlers) →
+infrastructure (adapters) → presentation or worker entrypoint.
 
 Domain must not import infrastructure or presentation.
 
-### Consequences
-
-- High unit-test coverage of domain and application with mocks.
-- Adapters can be swapped (NoOp publisher, in-memory cache) for tests.
-- Slightly more boilerplate than a “framework-first” layout.
-
 ---
 
-## ADR-003: Domain-Driven Design with value objects and aggregates
+## ADR-003: Domain-Driven Design with aggregates and value objects
 
 | Field | Value |
 |-------|--------|
 | **Status** | Accepted |
 | **Date** | 2026-07 |
 
-### Context
-
-Trading invariants (order state machine, money, quantities, wallet reservations)
-are easy to scatter across controllers if modeled as primitive bags.
-
 ### Decision
 
-- Model **aggregates** (e.g. `Order`, `Wallet`, `Instrument`) with explicit
-  transitions and change trackers for partial persistence.
-- Use **value objects** for IDs, money, quantity, enums (side, type, TIF, status).
-- Enforce invariants in the domain; application orchestrates ports.
-
-### Consequences
-
-- Safer mutations and clearer APIs.
-- More types and factories; onboarding cost for contributors.
+Model aggregates with explicit transitions; use VOs for IDs, money, quantities,
+roles, tokens. Enforce invariants in domain.
 
 ---
 
@@ -99,22 +60,9 @@ are easy to scatter across controllers if modeled as primitive bags.
 | **Status** | Accepted |
 | **Date** | 2026-08 |
 
-### Context
-
-ME is latency-sensitive. Full VO validation on every match step adds overhead.
-ME only consumes bus events produced by trusted services.
-
 ### Decision
 
-- Prefer `str` / `int` / `Decimal` (or tick integers) inside the order book.
-- Keep richer VOs in OIS, Wallet, and Admin where user input is untrusted.
-- Use price-time priority with efficient level structures (e.g. sorted levels +
-  FIFO queues).
-
-### Consequences
-
-- Lower per-match overhead.
-- Contract discipline on event payloads is mandatory (trust but schema-check).
+Prefer simple types inside the ME order book; richer VOs remain in OIS/Wallet/Admin.
 
 ---
 
@@ -125,52 +73,27 @@ ME only consumes bus events produced by trusted services.
 | **Status** | Accepted |
 | **Date** | 2026-08 |
 
-### Context
-
-Synchronous call chains between OIS, ME, Wallet, and notifications create
-coupling and availability coupling.
-
 ### Decision
 
-- Publish domain integration events to topic exchanges:
-  - `order.events` — OrderSubmitted, OrderOpened, OrderCancelled, …
-  - `trade.events` — TradeExecuted, OrderFilled, OrderPlaced, OrderRemoved
-- Consumers: ME, BHS, ND, OIS fill worker, Wallet settlement worker.
-- **Publish after successful commit** in the producing service.
-- Feature-flag the bus (`RABBITMQ_ENABLED`, default `false`) for isolated tests.
+Publish integration events after successful commit. Feature-flag the bus
+(`RABBITMQ_ENABLED`, default false) for isolated tests.
 
-### Consequences
-
-- Loose coupling and natural fan-out.
-- Eventual consistency; handlers must be idempotent where duplicates are possible
-  (e.g. trade projection by `trade_id`).
+Exchanges include order/trade events and **auth.events** (e.g. login, register,
+`VerificationTokenCreated`).
 
 ---
 
-## ADR-006: Market data via Redis cache written by ME, read by MDA (and later OIS)
+## ADR-006: Market data via Redis cache (ME writes, MDA reads)
 
 | Field | Value |
 |-------|--------|
 | **Status** | Accepted |
 | **Date** | 2026-08 |
 
-### Context
-
-Traders need current book depth and last trade price without querying the ME
-process directly.
-
 ### Decision
 
-- ME writes:
-  - `md:book:{instrument_id}` — depth snapshot + optional embedded LTP  
-  - `md:ltp:{instrument_id}` — last trade price JSON  
-- Market Data API reads those keys over HTTP.
-- OIS LTP validation at submit is **planned** (not yet wired).
-
-### Consequences
-
-- Fast read path independent of ME HTTP surface.
-- Cache can lag or be empty; readers must handle 404 / missing keys.
+ME writes `md:book:*` / `md:ltp:*`; Market Data API reads them. OIS LTP validation
+at submit remains planned.
 
 ---
 
@@ -181,23 +104,9 @@ process directly.
 | **Status** | Accepted |
 | **Date** | 2026-08 |
 
-### Context
-
-Early drafts exposed REST on BHS. Architecture places BHS and ND under
-**Event Consumers**, not Gateway-routed services.
-
 ### Decision
 
-- **BHS**: no public HTTP API; worker only; projects trades and order history
-  into its store (Wallet may later read shared store).
-- **ND**: no public HTTP API; consumes events; pushes to Notification Service
-  internal API.
-- **NS**: WebSocket for traders + **internal** HTTP push endpoint for ND.
-
-### Consequences
-
-- Clearer security boundary (no public history API until designed).
-- History queries for end users may go through Wallet or a future read API.
+No public HTTP for BHS/ND. NS exposes WebSocket + internal push API.
 
 ---
 
@@ -208,26 +117,10 @@ Early drafts exposed REST on BHS. Architecture places BHS and ND under
 | **Status** | Accepted |
 | **Date** | 2026-08 |
 
-### Context
-
-ME only matches on `OrderOpened`. Leaving orders in `NEW` until a separate
-`POST .../open` meant nothing reached the book in the default flow.
-
 ### Decision
 
-On successful submit (after instrument/wallet checks when enabled):
-
-1. Persist order as NEW then transition to **OPEN** in the same unit of work.
-2. Publish **OrderSubmitted** and **OrderOpened**.
-
-Explicit `POST /orders/{id}/open` remains for edge/admin-style use; re-open of
-already OPEN yields conflict.
-
-### Consequences
-
-- Matching works without an extra orchestration hop.
-- `reject` (NEW-only) is largely unused for the happy path; cancel/expire apply
-  to book-visible states.
+Successful submit persists, opens, and publishes `OrderSubmitted` + `OrderOpened`
+so ME can match without a separate open hop.
 
 ---
 
@@ -238,28 +131,10 @@ already OPEN yields conflict.
 | **Status** | Accepted |
 | **Date** | 2026-08 |
 
-### Context
-
-OIS must not embed Wallet or Admin persistence; tests must run without those
-services.
-
 ### Decision
 
-- Define ports: `WalletGateway`, `InstrumentGateway`.
-- Provide **HTTP** adapters and **NoOp** adapters.
-- Gate with `WALLET_INTEGRATION_ENABLED` / `ADMIN_INTEGRATION_ENABLED`
-  (default `false`).
-- Wallet exposes `GET /api/v1/wallets/by-trader/{trader_id}` for resolution.
-- Submit reserves (LIMIT buy notional / sell quantity); cancel releases remainder.
-- Wallet **settlement worker** consumes `TradeExecuted` to consume reserved
-  assets and credit counterparties.
-- OIS **fill worker** consumes `OrderFilled` to update order aggregates.
-
-### Consequences
-
-- Correct end-to-end money path when flags and bus are enabled.
-- Operational dependency on Wallet/Admin availability when flags are on.
-- MARKET buy cash reserve still needs LTP (deferred).
+OIS uses `WalletGateway` / `InstrumentGateway` with HTTP and NoOp adapters;
+feature flags default off.
 
 ---
 
@@ -270,75 +145,106 @@ services.
 | **Status** | Accepted |
 | **Date** | 2026-08 |
 
-### Context
-
-Auth issuance is a separate future service. Admin mutations must still be
-protected.
-
 ### Decision
 
-- Admin Service decodes JWT with `AUTH_PUBLIC_KEY` (RS256).
-- Require claim `role == "ADMIN"`.
-- No login/refresh endpoints in Admin Service.
-
-### Consequences
-
-- Simple, aligned with split Auth service.
-- Gateway or clients must obtain tokens elsewhere.
+Admin Service verifies JWT with `AUTH_PUBLIC_KEY` and requires `role == "ADMIN"`.
+Token issuance is owned by Auth Service.
 
 ---
 
-## ADR-011: Persistence with async SQLAlchemy 2.0 and fine-grained change tracking
+## ADR-011: Persistence with async SQLAlchemy 2.0 and change tracking
 
 | Field | Value |
 |-------|--------|
 | **Status** | Accepted |
 | **Date** | 2026-07 |
 
-### Context
-
-Aggregates (wallet, order) update only subsets of related rows; full rewrite is
-wasteful and racy.
-
 ### Decision
 
-- Async SQLAlchemy 2.0 + unit of work per use case.
-- Domain change trackers (created/updated/removed cash, holdings, status, fills)
-  drive partial updates.
-- Default test DB: SQLite in-memory; production URL via `DATABASE_URL`.
-
-### Consequences
-
-- Efficient updates; slightly more mapper/repository complexity.
+Async SQLAlchemy 2.0, unit of work per use case, fine-grained change trackers
+where aggregates update subsets of rows. Default test DB: SQLite in-memory.
 
 ---
 
-## ADR-012: Testing strategy — pyramid with service-local conftest isolation
+## ADR-012: Testing strategy — run_tests.sh + per-service requirements.txt
 
 | Field | Value |
 |-------|--------|
 | **Status** | Accepted |
-| **Date** | 2026-07 |
-
-### Context
-
-Multiple services share a monorepo; pytest collection collides without isolation.
+| **Date** | 2026-08 |
 
 ### Decision
 
-- Unit tests: domain, application (mocked ports), infrastructure (in-memory DB).
-- E2E: FastAPI `TestClient` where the service has HTTP.
-- **Official test entrypoint** from repository root:
+Official test entrypoint:
 
-   ```bash
-   sh run_tests.sh <service_directory>/ test/
-   ```
+```bash
+sh run_tests.sh <service_directory>/ test/
+```
 
-   Example: `sh run_tests.sh order_service/ test/`
+Each service ships `requirements.txt`. Runner installs it and uses
+`--confcutdir=<service>`.
+
+---
+
+## ADR-013: Dedicated Auth Service (sessions, tokens, auth events)
+
+| Field | Value |
+|-------|--------|
+| **Status** | Accepted |
+| **Date** | 2026-08 |
+
+### Context
+
+Identity and session lifecycle must not be embedded in trading services. Email
+delivery is event-driven, not inline in Auth.
+
+### Decision
+
+- **auth_service** owns signup, login, admin login, logout, password flows,
+  session lifecycle, and RS256 access/refresh tokens.
+- Users persist in SQL; **sessions and verification tokens persist in Redis**
+  when `REDIS_ENABLED` (in-memory adapters for tests).
+- Auth publishes domain events (`UserRegistered`, `UserLoggedIn`,
+  `UserLoggedOut`, `AccountDeleted`, **`VerificationTokenCreated`**).
+- Auth **does not send email**; notification pipeline consumes
+  `VerificationTokenCreated` (`token_type`: `verifyemail` |
+  `forget_pass_verify`).
+- Password strength rules apply on write paths only; login verifies hash only.
+- Elevated admin login requires account password **and** `ADMIN_PASSWORD_HASH`.
 
 ### Consequences
 
-- Reliable CI per service; full-stack bus tests remain optional/manual.
+Clear identity boundary; trading services trust JWT claims; email is decoupled
+via the bus.
+
+---
+
+## ADR-014: API Gateway — edge authZ and reverse proxy
+
+| Field | Value |
+|-------|--------|
+| **Status** | Proposed (not implemented) |
+| **Date** | 2026-08 |
+
+### Context
+
+Clients should not call every microservice directly. Auth routes must remain
+reachable without a prior token.
+
+### Decision (target)
+
+- Edge component verifies JWT locally with `AUTH_PUBLIC_KEY`.
+- Route policy (intended):
+  - `/api/v1/auth/*` — public (Auth enforces its own rules)
+  - `/api/v1/orders|wallets|market-data/*` — authenticated (`USER` or `ADMIN`)
+  - `/api/v1/instruments/*` — ADMIN only
+  - `/ws/v1/notifications/{trader_id}` — JWT; USER only own id
+- Forward identity headers upstream; do not expose internal push APIs.
+
+### Consequences
+
+Until implemented, clients call services directly; Admin continues local JWT
+verify (ADR-010). This ADR records the intended edge design only.
 
 ---
 
@@ -354,7 +260,9 @@ Multiple services share a monorepo; pytest collection collides without isolation
 | 006 | Redis market data cache contract | Accepted |
 | 007 | BHS / ND consumers only | Accepted |
 | 008 | Submit auto-opens orders | Accepted |
-| 009 | Wallet/Admin ports + settlement/fill workers | Accepted |
+| 009 | Wallet/Admin ports + workers | Accepted |
 | 010 | Admin JWT verify-only | Accepted |
 | 011 | Async SQLAlchemy + change tracking | Accepted |
-| 012 | Testing pyramid + confcutdir | Accepted |
+| 012 | run_tests.sh + per-service requirements.txt | Accepted |
+| 013 | Dedicated Auth Service | Accepted |
+| 014 | API Gateway edge authZ + proxy | Proposed |
