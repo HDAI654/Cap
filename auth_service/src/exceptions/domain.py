@@ -22,4 +22,7 @@ class InvalidHashedPasswordError(DomainError):
 class InvalidDeviceError(DomainError):
     """Device identifier is invalid."""
 
+class InvalidDateError(DomainError):
+    """Date value is invalid."""
+
 
