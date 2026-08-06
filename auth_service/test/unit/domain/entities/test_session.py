@@ -1,6 +1,7 @@
 from datetime import date
 from src.domain.entities.session import Session
 from src.domain.entities.user import User
+from src.domain.value_objects.session_id import SessionId
 
 
 def test_create_binds_user_and_device() -> None:
@@ -14,8 +15,16 @@ def test_create_binds_user_and_device() -> None:
 def test_create_with_explicit_id_and_date() -> None:
     sid = "22222222-2222-4222-8222-222222222222"
     uid = "11111111-1111-4111-8111-111111111111"
-    session = Session.create(
-        user_id=uid, device="ios", id=sid, created_at="2026-01-15"
-    )
+    session = Session.create(user_id=uid, device="ios", id=sid, created_at="2026-01-15")
     assert session.id.value == sid
     assert session.created_at.value == date(2026, 1, 15)
+
+
+def test_generates_session_id() -> None:
+    session = Session.create(user_id="11111111-1111-4111-8111-111111111111")
+    assert isinstance(session.id, SessionId)
+
+
+def test_default_device() -> None:
+    session = Session.create(user_id="11111111-1111-4111-8111-111111111111")
+    assert session.device.value == "unknown"
