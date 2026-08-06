@@ -1,3 +1,7 @@
+"""Auth service configuration."""
+
+from __future__ import annotations
+
 import os
 from pathlib import Path
 
@@ -17,6 +21,7 @@ _PUBLIC_KEY_PATH = Path(
 
 
 class Config:
+    """Environment-backed settings for Auth Service."""
 
     APP_NAME: str = os.getenv("APP_NAME", "CapAuth")
     APP_ENV: str = os.getenv("APP_ENV", "development")
@@ -69,6 +74,21 @@ class Config:
     ROTATE_THRESHOLD_MINUTES: int = int(os.getenv("ROTATE_THRESHOLD_MINUTES", "4320"))
 
     ADMIN_PASSWORD_HASH: str = os.getenv("ADMIN_PASSWORD_HASH", "")
+
+    # Comma-separated blocked addresses / domains for signup
+    BLOCKED_EMAILS: set[str] = {
+        e.strip().lower()
+        for e in os.getenv("BLOCKED_EMAILS", "").split(",")
+        if e.strip()
+    }
+    BLOCKED_EMAIL_DOMAINS: set[str] = {
+        d.strip().lower()
+        for d in os.getenv("BLOCKED_EMAIL_DOMAINS", "").split(",")
+        if d.strip()
+    }
+    BLOCKED_EMAILS_REDIS_KEY: str = os.getenv(
+        "BLOCKED_EMAILS_REDIS_KEY", "auth:blocked_emails"
+    )
 
     AUTH_TOKEN_PRIVATE_KEY: str = (
         _PRIVATE_KEY_PATH.read_text() if _PRIVATE_KEY_PATH.exists() else ""
