@@ -25,4 +25,8 @@ class InvalidDeviceError(DomainError):
 class InvalidDateError(DomainError):
     """Date value is invalid."""
 
+class InvalidRoleError(DomainError):
+    """Role value is not recognized."""
+
+
 
