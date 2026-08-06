@@ -219,35 +219,6 @@ via the bus.
 
 ---
 
-## ADR-014: API Gateway — edge authZ and reverse proxy
-
-| Field | Value |
-|-------|--------|
-| **Status** | Proposed (not implemented) |
-| **Date** | 2026-08 |
-
-### Context
-
-Clients should not call every microservice directly. Auth routes must remain
-reachable without a prior token.
-
-### Decision (target)
-
-- Edge component verifies JWT locally with `AUTH_PUBLIC_KEY`.
-- Route policy (intended):
-  - `/api/v1/auth/*` — public (Auth enforces its own rules)
-  - `/api/v1/orders|wallets|market-data/*` — authenticated (`USER` or `ADMIN`)
-  - `/api/v1/instruments/*` — ADMIN only
-  - `/ws/v1/notifications/{trader_id}` — JWT; USER only own id
-- Forward identity headers upstream; do not expose internal push APIs.
-
-### Consequences
-
-Until implemented, clients call services directly; Admin continues local JWT
-verify (ADR-010). This ADR records the intended edge design only.
-
----
-
 ## ADR index
 
 | ID | Title | Status |
@@ -265,4 +236,3 @@ verify (ADR-010). This ADR records the intended edge design only.
 | 011 | Async SQLAlchemy + change tracking | Accepted |
 | 012 | run_tests.sh + per-service requirements.txt | Accepted |
 | 013 | Dedicated Auth Service | Accepted |
-| 014 | API Gateway edge authZ + proxy | Proposed |
