@@ -13,3 +13,7 @@ class InvalidEmailError(DomainError):
     """Email format is invalid."""
 
 
+class InvalidPasswordError(DomainError):
+    """Password does not meet domain strength rules."""
+
+
