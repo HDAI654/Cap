@@ -45,9 +45,7 @@ class RedisVerificationTokenRepository(VerificationTokenRepository):
         token_type: str,
     ) -> Email | None:
         key = self._key(token, token_type)
-        value = await self._execute_redis_operation(
-            "get_token", self._client.get, key
-        )
+        value = await self._execute_redis_operation("get_token", self._client.get, key)
         if value is None:
             return None
         if isinstance(value, bytes):
@@ -60,9 +58,7 @@ class RedisVerificationTokenRepository(VerificationTokenRepository):
         token_type: str,
     ) -> None:
         key = self._key(token, token_type)
-        await self._execute_redis_operation(
-            "delete_token", self._client.delete, key
-        )
+        await self._execute_redis_operation("delete_token", self._client.delete, key)
 
     def _key(self, token: EmailVerificationToken, token_type: str) -> str:
         return f"{self._prefix}{token_type}:{token.value}"

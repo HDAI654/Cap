@@ -24,9 +24,7 @@ class RedisEmailBlocklistChecker(EmailBlocklistChecker):
 
     async def is_blocked(self, email: Email) -> bool:
         try:
-            return bool(
-                await self._client.sismember(self._key, email.value.lower())
-            )
+            return bool(await self._client.sismember(self._key, email.value.lower()))
         except RedisConnectionError as e:
             logger.exception("Failed to connect to Redis during is_blocked")
             raise CacheConnectionError(f"Failed to connect to cache: {e}") from e

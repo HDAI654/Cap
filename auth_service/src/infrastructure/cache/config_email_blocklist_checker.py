@@ -11,11 +11,13 @@ class ConfigEmailBlocklistChecker(EmailBlocklistChecker):
         blocked_emails: set[str] | None = None,
         blocked_domains: set[str] | None = None,
     ) -> None:
-        self._emails = blocked_emails if blocked_emails is not None else set(
-            Config.BLOCKED_EMAILS
+        self._emails = (
+            blocked_emails if blocked_emails is not None else set(Config.BLOCKED_EMAILS)
         )
-        self._domains = blocked_domains if blocked_domains is not None else set(
-            Config.BLOCKED_EMAIL_DOMAINS
+        self._domains = (
+            blocked_domains
+            if blocked_domains is not None
+            else set(Config.BLOCKED_EMAIL_DOMAINS)
         )
 
     async def is_blocked(self, email: Email) -> bool:

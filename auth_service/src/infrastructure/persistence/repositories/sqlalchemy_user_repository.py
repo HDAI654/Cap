@@ -1,6 +1,11 @@
 import logging
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError, TimeoutError
+from sqlalchemy.exc import (
+    IntegrityError,
+    OperationalError,
+    SQLAlchemyError,
+    TimeoutError,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.entities.user import User
@@ -87,9 +92,7 @@ class SQLAlchemyUserRepository(UserRepository):
         model = result.scalar_one_or_none()
         if model is None:
             raise UserNotFoundError(f"User '{user_id.value}' not found")
-        await self._execute_db_operation(
-            "delete_user", self._session.delete, model
-        )
+        await self._execute_db_operation("delete_user", self._session.delete, model)
         await self._execute_db_operation("delete_flush", self._session.flush)
 
     async def exists_by_id(self, user_id: UserId) -> bool:
@@ -113,21 +116,13 @@ class SQLAlchemyUserRepository(UserRepository):
             return await coro(*args, **kwargs)
         except IntegrityError as e:
             logger.exception("Database integrity error during %s", operation)
-            raise DatabaseOperationError(
-                f"Database integrity error: {e}"
-            ) from e
+            raise DatabaseOperationError(f"Database integrity error: {e}") from e
         except OperationalError as e:
             logger.exception("Database connection error during %s", operation)
-            raise DatabaseConnectionError(
-                f"Failed to connect to database: {e}"
-            ) from e
+            raise DatabaseConnectionError(f"Failed to connect to database: {e}") from e
         except TimeoutError as e:
             logger.exception("Database timeout during %s", operation)
-            raise DatabaseTimeoutError(
-                f"Database operation timed out: {e}"
-            ) from e
+            raise DatabaseTimeoutError(f"Database operation timed out: {e}") from e
         except SQLAlchemyError as e:
             logger.exception("Database error during %s", operation)
-            raise DatabaseOperationError(
-                f"Database operation failed: {e}"
-            ) from e
+            raise DatabaseOperationError(f"Database operation failed: {e}") from e
