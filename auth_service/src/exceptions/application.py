@@ -3,8 +3,10 @@ class ApplicationError(Exception):
 
     pass
 
+
 class EmailBlockedError(ApplicationError):
     """Email address is on the blocklist."""
+
 
 class InvalidEmailOrPasswordError(ApplicationError):
     """Login failed (generic message — do not leak which field failed)."""
@@ -20,5 +22,3 @@ class DeviceMismatchError(ApplicationError):
 
 class PermissionDeniedError(ApplicationError):
     """Caller is not allowed to perform the requested action."""
-
-

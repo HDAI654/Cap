@@ -6,7 +6,11 @@ from src.domain.ports.token_encoder import TokenEncoder
 from src.domain.value_objects.device import Device
 from src.domain.value_objects.session_id import SessionId
 from src.domain.value_objects.user_id import UserId
-from src.exceptions import DeviceMismatchError, PermissionDeniedError, SessionNotFoundError
+from src.exceptions import (
+    DeviceMismatchError,
+    PermissionDeniedError,
+    SessionNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
