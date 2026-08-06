@@ -21,7 +21,6 @@ _PUBLIC_KEY_PATH = Path(
 
 
 class Config:
-    """Environment-backed settings for Auth Service."""
 
     APP_NAME: str = os.getenv("APP_NAME", "CapAuth")
     APP_ENV: str = os.getenv("APP_ENV", "development")
