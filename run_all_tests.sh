@@ -63,3 +63,8 @@ print_green_banner "Running auth_service tests"
 sh run_tests.sh auth_service test/
 print_green_banner "auth_service tests finished successfully"
 print_green_banner ""
+
+print_green_banner "Running auth_dispatcher tests"
+sh run_tests.sh auth_dispatcher test/
+print_green_banner "auth_dispatcher tests finished successfully"
+print_green_banner ""

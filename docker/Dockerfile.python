@@ -1,0 +1,24 @@
+# Generic Cap Python service image.
+# build-arg SERVICE_DIR=auth_service
+# build-arg ENTRY_MODULE=src.app:app   (uvicorn) OR leave CMD for worker
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG SERVICE_DIR
+COPY shared /app/shared
+COPY ${SERVICE_DIR}/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt asyncpg>=0.29.0
+
+COPY ${SERVICE_DIR} /app/${SERVICE_DIR}
+ENV PYTHONPATH=/app:/app/${SERVICE_DIR}
+WORKDIR /app/${SERVICE_DIR}
+
+# Default HTTP entry — override for workers
+ENV UVICORN_APP=src.app:app
+ENV PORT=8000
+CMD uvicorn ${UVICORN_APP} --host 0.0.0.0 --port ${PORT}

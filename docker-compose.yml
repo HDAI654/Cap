@@ -1,0 +1,253 @@
+# Cap — local full stack
+# Usage: docker compose up --build
+#
+# Prerequisites: auth_service/keys/private.pem and public.pem
+
+x-python-service: &python-service
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.python
+  restart: unless-stopped
+  environment: &common-env
+    APP_ENV: production
+    RABBITMQ_ENABLED: "true"
+    RABBITMQ_URL: amqp://cap:cap@rabbitmq:5672/
+    REDIS_ENABLED: "true"
+    REDIS_URL: redis://redis:6379/0
+    DATABASE_URL: postgresql+asyncpg://cap:cap@postgres:5432/cap
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cap
+      POSTGRES_PASSWORD: cap
+      POSTGRES_DB: cap
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cap -d cap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: cap
+      RABBITMQ_DEFAULT_PASS: cap
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  auth_service:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: auth_service
+    environment:
+      <<: *common-env
+      APP_NAME: CapAuth
+      PORT: "8000"
+      RABBITMQ_EXCHANGE: auth.events
+      AUTH_PRIVATE_KEY_PATH: /keys/private.pem
+      AUTH_PUBLIC_KEY_PATH: /keys/public.pem
+    volumes:
+      - ./auth_service/keys:/keys:ro
+    ports:
+      - "8000:8000"
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8000
+
+  auth_dispatcher:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: auth_dispatcher
+    environment:
+      <<: *common-env
+      APP_NAME: AuthDispatcher
+      RABBITMQ_AUTH_EVENTS_EXCHANGE: auth.events
+      SMTP_ENABLED: "false"
+    command: python -m src.worker
+
+  wallet_service:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: wallet_service
+    environment:
+      <<: *common-env
+      APP_NAME: CapWallet
+      PORT: "8001"
+    ports:
+      - "8001:8001"
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8001
+
+  admin_service:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: admin_service
+    environment:
+      <<: *common-env
+      APP_NAME: CapAdmin
+      PORT: "8002"
+    volumes:
+      - ./auth_service/keys/public.pem:/keys/public.pem:ro
+    ports:
+      - "8002:8002"
+    command: >
+      sh -c 'export AUTH_PUBLIC_KEY="$$(cat /keys/public.pem)" &&
+      uvicorn src.app:app --host 0.0.0.0 --port 8002'
+
+  order_service:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: order_service
+    environment:
+      <<: *common-env
+      APP_NAME: CapOrder
+      PORT: "8003"
+      RABBITMQ_ORDER_EVENTS_EXCHANGE: order.events
+      WALLET_SERVICE_URL: http://wallet_service:8001
+      ADMIN_SERVICE_URL: http://admin_service:8002
+      WALLET_INTEGRATION_ENABLED: "false"
+      ADMIN_INTEGRATION_ENABLED: "false"
+    ports:
+      - "8003:8003"
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8003
+
+  market_data_service:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: market_data_service
+    environment:
+      <<: *common-env
+      APP_NAME: CapMDA
+      PORT: "8004"
+    ports:
+      - "8004:8004"
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8004
+
+  notification_service:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: notification_service
+    environment:
+      <<: *common-env
+      APP_NAME: CapNS
+      PORT: "8005"
+    ports:
+      - "8005:8005"
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8005
+
+  matching_engine:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: matching_engine
+    environment:
+      <<: *common-env
+      APP_NAME: CapME
+    command: python -m src.worker
+
+  balance_history_service:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: balance_history_service
+    environment:
+      <<: *common-env
+      APP_NAME: CapBHS
+    command: python -m src.worker
+
+  notification_dispatcher:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.python
+      args:
+        SERVICE_DIR: notification_dispatcher
+    environment:
+      <<: *common-env
+      APP_NAME: CapND
+      NOTIFICATION_SERVICE_URL: http://notification_service:8005
+    command: python -m src.worker
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      HTTP_ADDR: ":8080"
+      AUTH_SERVICE_URL: http://auth_service:8000
+      WALLET_SERVICE_URL: http://wallet_service:8001
+      ADMIN_SERVICE_URL: http://admin_service:8002
+      ORDER_SERVICE_URL: http://order_service:8003
+      MARKET_DATA_SERVICE_URL: http://market_data_service:8004
+      NOTIFICATION_SERVICE_URL: http://notification_service:8005
+    volumes:
+      - ./auth_service/keys/public.pem:/keys/public.pem:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth_service
+      - wallet_service
+      - admin_service
+      - order_service
+      - market_data_service
+      - notification_service
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        export AUTH_PUBLIC_KEY="$$(cat /keys/public.pem)"
+        exec gateway
+
+volumes:
+  pgdata:
